@@ -23,6 +23,7 @@
     "@ai-sdk/openai": "^0.0.24",
     "@anthropic-ai/sdk": "^0.18.0",
     "@coinbase/coinbase-sdk": "^0.17.0",
+    "@coinbase/wallet-sdk": "^4.3.0",
     "@headlessui/react": "^1.7.18",
     "@heroicons/react": "^2.0.18",
     "@radix-ui/react-accordion": "^1.1.2",
