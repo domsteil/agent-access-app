@@ -105,7 +105,7 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
   <div className={`mb-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
     <div
-      className={`max-w-[80%] break-words p-3 rounded-lg shadow transition-all duration-200 ${
+      className={`max-w-[80%] break-words p-3 rounded-lg shadow-sm transition-all duration-200 ${
         message.role === "user"
           ? "bg-blue-600 text-white rounded-br-none hover:shadow-lg"
           : "bg-gray-200 text-gray-900 rounded-bl-none hover:shadow-lg"
@@ -116,7 +116,7 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
   </div>
 ));
 
-// Agent Card component with hover effect and refined styling
+// Agent Card component
 interface AgentCardProps {
   agent: typeof AGENTS[number];
   onStake: (agentId: number) => void;
@@ -306,7 +306,7 @@ const LandingPage: React.FC = () => {
           Agent Access
         </h1>
         <div className="flex items-center gap-4">
-          <Connect sdk={sdk} onConnect={handleWalletConnection} />
+          {sdk && <Connect sdk={sdk} onConnect={handleWalletConnection} />}
           <button
             onClick={checkStake}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
