@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Textarea from 'react-textarea-autosize';
 import ReactMarkdown from 'react-markdown';
-import { Connect } from '@/components/wallet/ConnectWallet';
+import { Connect } from '@/components/wallet/Connect';
 
 const LandingPage = () => {
   const [messages, setMessages] = useState([]);
@@ -37,7 +37,7 @@ const LandingPage = () => {
     setInputValue('');
 
     try {
-      const res = await fetch("/api/ai/venice-ai", {
+      const res = await fetch("/api/ai/venice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
