@@ -68,6 +68,7 @@
     "ethers": "^6.13.5",
     "framer-motion": "^11.0.8",
     "input-otp": "^1.1.0",
+    "js-yaml": "^4.1.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.265.0",
     "moment": "^2.30.1",

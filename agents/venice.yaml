@@ -1,6 +1,6 @@
 id: 1
 name: "Venice AI"
-description: "Intelligent aggregator focusing on tweets, location data, and summarization."
+description: "Decentralized Intelligence Aggregator"
 image: "/images/venice.png"
 model: "GPT-4"
 type: "aggregator"

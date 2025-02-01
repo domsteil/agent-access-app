@@ -5,5 +5,5 @@ image: "/images/flaunch.png"
 model: "GPT-4"
 type: "memecoin platform"
 chain: "Base"
-agentURL: "https://flaunch.xyz"
-stakeNeeded: false
+agentURL: "https://flaunch.gg"
+stakeNeeded: true
