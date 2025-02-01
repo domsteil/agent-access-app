@@ -18,7 +18,7 @@ export default async function handler(request: Request) {
     // const tools = functions.map(f => ({ type: "function", function: f }));
 
     const response = await venice.chat.completions.create({
-      model: 'llama-3.1-405b',
+      model: 'llama-3.2-3b',
       messages: [
         {
           role: "system",
@@ -37,7 +37,7 @@ export default async function handler(request: Request) {
       id: response.id,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
-      model: "llama-3.1-405b",
+      model: "llama-3.2-3b",
       choices: [
         {
           index: 0,
