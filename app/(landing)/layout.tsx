@@ -5,17 +5,8 @@ import React, { useEffect, useState } from 'react';
 
 import { CBWSDKReactContextProvider } from '@/context/CBWSDKReactContextProvider';
 
-interface LandingLayoutProps {
-  children: React.ReactNode;
-  showNavbar?: boolean;
-  showFooter?: boolean;
-}
 
-const LandingLayout: React.FC<LandingLayoutProps> = ({ 
-  children, 
-  showNavbar = true, 
-  showFooter = true 
-}) => {
+const LandingLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const [sdk, setSDK] = useState<ReturnType<typeof createCoinbaseWalletSDK>>();
 
@@ -50,6 +41,6 @@ const LandingLayout: React.FC<LandingLayoutProps> = ({
       </div>
     </CBWSDKReactContextProvider>
   );
-}
+};
 
 export default LandingLayout;
