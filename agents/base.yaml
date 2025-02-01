@@ -1,0 +1,10 @@
+id: 7
+name: "Base Agent"
+description: "Base L2 Agent"
+image: "/images/base.png"
+model: "llama-3.2-3b"
+type: "aggregator"
+chain: "Base"
+agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
+agentURL: "https://api.venice.ai/api/v1"
+stakeNeeded: false

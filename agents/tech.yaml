@@ -1,0 +1,10 @@
+id: 3
+name: "Tech AI"
+description: "Cutting-edge technology research and development assistant."
+image: "/images/techai.png"
+model: "gpt-4-32k"
+type: "tech"
+chain: "Ethereum"
+agentAddress: "0xA1B2C3D4E5F60718293a1234567890abcdef1234"
+agentURL: "https://api.techai.io/v1"
+stakeNeeded: false

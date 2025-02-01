@@ -1,0 +1,10 @@
+id: 4
+name: "Fountain AI"
+description: "Decentralized marketing and social analytics platform."
+image: "/images/fountain.png"
+model: "llama-7b"
+type: "marketing"
+chain: "Polygon"
+agentAddress: "0xB2C3D4E5F60718293a1234567890abcdef12345"
+agentURL: "https://api.fountain.ai/api/v1"
+stakeNeeded: true

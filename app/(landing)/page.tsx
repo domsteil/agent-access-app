@@ -61,9 +61,11 @@ const useWallet = () => {
     setSDK(sdkInstance);
     if (sdkInstance) {
       const provider = sdkInstance.getProvider();
-      provider.on("accountsChanged", (accounts: string[]) => {
-        if (accounts.length > 0) {
-          const address = accounts[0];
+      provider.on("accountsChanged", (accounts: unknown) => {
+        // Cast accounts to a string array
+        const accountArray = accounts as string[];
+        if (accountArray && accountArray.length > 0) {
+          const address = accountArray[0];
           setWalletAddress(address);
           localStorage.setItem("walletAddress", address);
         } else {
@@ -74,7 +76,7 @@ const useWallet = () => {
       // Check for an existing connection
       (async () => {
         try {
-          const accounts = await provider.request({ method: "eth_accounts" });
+          const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
           if (accounts && accounts.length > 0) {
             setWalletAddress(accounts[0]);
             localStorage.setItem("walletAddress", accounts[0]);
@@ -101,16 +103,12 @@ interface ChatMessageProps {
   message: Message;
 }
 const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
-  <div
-    className={`mb-2 flex ${
-      message.role === "user" ? "justify-end" : "justify-start"
-    }`}
-  >
+  <div className={`mb-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
     <div
-      className={`max-w-[80%] break-words p-3 rounded-lg shadow-sm ${
+      className={`max-w-[80%] break-words p-3 rounded-lg shadow transition-all duration-200 ${
         message.role === "user"
-          ? "bg-blue-500 text-white rounded-br-none"
-          : "bg-gray-200 text-gray-900 rounded-bl-none"
+          ? "bg-blue-600 text-white rounded-br-none hover:shadow-lg"
+          : "bg-gray-200 text-gray-900 rounded-bl-none hover:shadow-lg"
       }`}
     >
       <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -118,14 +116,14 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
   </div>
 ));
 
-// Agent Card component
+// Agent Card component with hover effect and refined styling
 interface AgentCardProps {
   agent: typeof AGENTS[number];
   onStake: (agentId: number) => void;
   isUserStaked: boolean;
 }
 const AgentCard: React.FC<AgentCardProps> = ({ agent, onStake, isUserStaked }) => (
-  <div className="bg-white border border-gray-200 p-4 rounded-lg shadow flex flex-col justify-between">
+  <div className="bg-white border border-gray-200 p-4 rounded-lg shadow hover:shadow-xl transition-shadow flex flex-col justify-between">
     <div>
       {agent.image && (
         <img
@@ -304,7 +302,7 @@ const LandingPage: React.FC = () => {
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
       <header className="p-4 bg-white border-b border-gray-200 flex flex-col md:flex-row items-center justify-between">
-        <h1 className="text-gray-900 font-montserrat text-2xl font-semibold mb-2 md:mb-0">
+        <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
           Agent Access
         </h1>
         <div className="flex items-center gap-4">
@@ -376,7 +374,7 @@ const LandingPage: React.FC = () => {
 
         {/* AI Agents Section */}
         <aside className="w-full md:w-1/2 flex flex-col bg-white p-4 overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200">
-          <h2 className="text-gray-900 font-semibold text-xl mb-4">AI Agents</h2>
+          <h2 className="text-gray-900 font-bold text-xl mb-4">AI Agents</h2>
 
           <div className="mb-4 p-4 bg-gray-100 border border-gray-200 rounded">
             <div className="flex flex-wrap gap-4">

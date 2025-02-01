@@ -1,0 +1,10 @@
+id: 5
+name: "CryptoSense"
+description: "AI-powered cryptocurrency sentiment analyzer."
+image: "/images/cryptosense.png"
+model: "gpt-3.5-turbo"
+type: "analytics"
+chain: "Ethereum"
+agentAddress: "0xC3D4E5F60718293a1234567890abcdef123456"
+agentURL: "https://api.cryptosense.ai/v1"
+stakeNeeded: true

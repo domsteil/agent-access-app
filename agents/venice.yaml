@@ -2,8 +2,9 @@ id: 1
 name: "Venice AI"
 description: "Decentralized Intelligence Aggregator"
 image: "/images/venice.png"
-model: "GPT-4"
+model: "llama-3.2-3b"
 type: "aggregator"
 chain: "Ethereum"
+agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
 agentURL: "https://api.venice.ai/api/v1"
 stakeNeeded: false

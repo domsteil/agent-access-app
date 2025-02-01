@@ -2,6 +2,10 @@
 
 import venice from "./venice.yaml";
 import flaunch from "./flaunch.yaml";
+import tech from "./tech.yaml";
+import fountain from "./fountain.yaml";
+import cryptosense from "./cryptosense.yaml";
+import base from "./base.yaml";
 
 export type Agent = {
   id: number;
@@ -14,4 +18,4 @@ export type Agent = {
   stakeNeeded?: boolean;
 };
 
-export const AGENTS: Agent[] = [venice, flaunch];
+export const AGENTS: Agent[] = [venice, flaunch, tech, fountain, cryptosense, base];
