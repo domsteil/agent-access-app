@@ -1,0 +1,9 @@
+id: 2
+name: "Flaunch AI"
+description: "Intelligent flaunch agent."
+image: "/images/flaunch.png"
+model: "GPT-4"
+type: "memecoin platform"
+chain: "Base"
+agentURL: "https://flaunch.xyz"
+stakeNeeded: false

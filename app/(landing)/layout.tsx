@@ -23,7 +23,6 @@ const LandingLayout: React.FC<LandingLayoutProps> = ({
     const sdk = createCoinbaseWalletSDK({
       appName: 'Agent Access',
       preference: {
-        keysUrl: 'http://localhost:3005/connect',
         options: 'smartWalletOnly',
       },
     });
@@ -41,7 +40,7 @@ const LandingLayout: React.FC<LandingLayoutProps> = ({
   }, []);
 
   return (
-    <CBWSDKReactContextProvider sdk={sdk}>
+    <CBWSDKReactContextProvider>
       <div className="flex flex-col min-h-screen bg-gradient-to-b from-stateset-blue-50 to-white">
         <main className="flex-grow overflow-auto">
           <div className="mx-auto max-w-screen-xl w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

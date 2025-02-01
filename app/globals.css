@@ -12,8 +12,9 @@ body,
 
 /* #1F1F1F Background Globally */
 body {
-  background-color: #000000;
-}
+    background-color: hsl(var(--background));
+  }
+  
  
 .resizer {
   position: absolute;

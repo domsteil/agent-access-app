@@ -3,12 +3,8 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-if (!process.env.RPC_URL) {
-  throw new Error("RPC_URL not found in environment variables");
-}
-
 const provider = new ethers.JsonRpcProvider(
-  process.env.RPC_URL,
+  "https://base-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY,
   { name: 'base', chainId: 8453 }
 );
 

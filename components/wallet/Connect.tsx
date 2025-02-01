@@ -1,8 +1,10 @@
 import { createCoinbaseWalletSDK } from '@coinbase/wallet-sdk';
 import React, { useCallback, useState } from 'react';
 
-
+// Connect Wallet Component
 export function Connect({ sdk }: { sdk: ReturnType<typeof createCoinbaseWalletSDK> }) {
+
+
   const [state, setState] = useState<string[]>();
   const handleConnect = useCallback(async () => {
     if (!sdk) {
@@ -24,8 +26,8 @@ export function Connect({ sdk }: { sdk: ReturnType<typeof createCoinbaseWalletSD
         Connect
       </button>
       {state && (
-        <pre className="w-full p-2 bg-gray-900 border-1 border-gray-700 border-solid rounded-md">
-          {JSON.stringify(state, null, 2)}
+        <pre className="w-full p-2 bg-white border-1 border-white text-green-500 border-solid rounded-md">
+          {state[0]}
         </pre>
       )}
     </>
