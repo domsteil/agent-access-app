@@ -806,9 +806,6 @@ video {
 .col-span-9 {
   grid-column: span 9 / span 9;
 }
-.float-right {
-  float: right;
-}
 .mx-2\.5 {
   margin-left: 0.625rem;
   margin-right: 0.625rem;
@@ -908,6 +905,9 @@ video {
 .mt-1 {
   margin-top: 0.25rem;
 }
+.mt-12 {
+  margin-top: 3rem;
+}
 .mt-2 {
   margin-top: 0.5rem;
 }
@@ -916,9 +916,6 @@ video {
 }
 .mt-4 {
   margin-top: 1rem;
-}
-.mt-12 {
-  margin-top: 3rem;
 }
 .block {
   display: block;
@@ -1128,9 +1125,6 @@ video {
 }
 .w-screen {
   width: 100vw;
-}
-.w-14 {
-  width: 3.5rem;
 }
 .min-w-44 {
   min-width: 11rem;
@@ -5418,6 +5412,10 @@ video {
 .\!text-tremor-label {
   font-size: 0.75rem !important;
 }
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
 .text-lg {
   font-size: 1.125rem;
   line-height: 1.75rem;
@@ -5448,10 +5446,6 @@ video {
 .text-xs {
   font-size: 0.75rem;
   line-height: 1rem;
-}
-.text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
 }
 .font-bold {
   font-weight: 700;
