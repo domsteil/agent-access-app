@@ -551,7 +551,7 @@ const LandingPage: React.FC = () => {
               {sdk ? (
                 <Connect sdk={sdk} onConnect={handleWalletConnection} />
               ) : (
-                <div className="text-gray-600">Loading Wallet...</div>
+                <div className="text-gray-600">Loading Base Wallet...</div>
               )}
               <button
                 onClick={checkStake}
