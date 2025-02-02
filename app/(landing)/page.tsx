@@ -62,7 +62,7 @@ interface FilterState {
 const API_ROUTES: Record<number, string> = {
   1: "/api/ai/venice",
   2: "/api/ai/tech",
-  3: "/api/ai/flaunch", 
+  3: "/api/ai/flaunch",
   4: "/api/ai/crypto",
   5: "/api/ai/social",
 };
@@ -104,7 +104,7 @@ const splitMessage = (body: string) => {
       }
     }
   }
-  
+
   return { reason: "", response: body };
 };
 
@@ -133,12 +133,12 @@ const useWallet = () => {
           appName: "Agent Access",
           preference: { options: "all" },
         });
-        
+
         setSDK(sdkInstance);
-        
+
         if (sdkInstance) {
           const provider = sdkInstance.getProvider();
-          
+
           provider.on("accountsChanged", (accounts: unknown) => {
             const accountArray = accounts as string[];
             if (accountArray?.[0]) {
@@ -212,11 +212,10 @@ const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => 
     <div className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
       <CopyToClipboard text={message.content} onCopy={handleCopy}>
         <div className="relative w-full max-w-[80%] group">
-          <div className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
-            message.role === "user"
+          <div className={`p-4 rounded-xl shadow-md transition-all duration-200 ${message.role === "user"
               ? "bg-blue-600 text-white hover:shadow-lg"
               : "bg-gray-100 text-gray-800 hover:shadow-lg"
-          }`}>
+            }`}>
             <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
             <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
             {hasThinkBlock && reason && (
@@ -276,7 +275,7 @@ const AgentCard: React.FC<{
         <h4 className="text-sm font-semibold text-gray-700">Available Actions:</h4>
         <div className="flex flex-wrap gap-2">
           {agent.actions.map((action, index) => (
-            <span 
+            <span
               key={`${action.name}-${index}`}
               className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
             >
@@ -328,7 +327,7 @@ const AgentCard: React.FC<{
         </div>
         {renderActions()}
       </div>
-      
+
       <button
         onClick={handleClick}
         className={`
@@ -376,25 +375,25 @@ const LandingPage: React.FC = () => {
 
   // Improved auto-scroll handling
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  
+
   useEffect(() => {
     if (!chatContainerRef.current) return;
 
     const container = chatContainerRef.current;
     let lastScrollTop = container.scrollTop;
-    
+
     const handleScroll = () => {
       // If user scrolls up, disable auto-scroll
       if (container.scrollTop < lastScrollTop) {
         setShouldAutoScroll(false);
       }
-      
+
       // If user scrolls near bottom, enable auto-scroll
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       if (isNearBottom) {
         setShouldAutoScroll(true);
       }
-      
+
       lastScrollTop = container.scrollTop;
     };
 
@@ -422,9 +421,9 @@ const LandingPage: React.FC = () => {
     return AGENTS.filter(agent => {
       const { model, type, chain, hasImage } = agentFilters;
       return (!model || agent.model === model) &&
-             (!type || agent.type === type) &&
-             (!chain || agent.chain === chain) &&
-             (!hasImage || agent.image);
+        (!type || agent.type === type) &&
+        (!chain || agent.chain === chain) &&
+        (!hasImage || agent.image);
     });
   }, [agentFilters]);
 
@@ -458,7 +457,7 @@ const LandingPage: React.FC = () => {
 
         const data = await response.json();
         const assistantMessageContent = data?.choices?.[0]?.message?.content;
-        
+
         if (assistantMessageContent) {
           const assistantMessage: Message = {
             id: generateMessageId(),
@@ -496,7 +495,7 @@ const LandingPage: React.FC = () => {
   // Stake handling with error management
   const handleStake = useCallback(async (agentId: number) => {
     const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
-    
+
     if (!currentWalletAddress) {
       showToast("Please connect your wallet first", "warning");
       return;
@@ -505,7 +504,7 @@ const LandingPage: React.FC = () => {
     try {
       const staked = await isStaked(currentWalletAddress);
       setIsUserStaked(staked);
-      
+
       if (staked) {
         showToast("You are already staked!", "success");
       } else {
@@ -522,15 +521,12 @@ const LandingPage: React.FC = () => {
 
   // Enhanced stake status check
   const checkStake = useCallback(async () => {
-    const currentWalletAddress = walletAddress;
-    
-    if (!currentWalletAddress) {
+    if (!walletAddress) {
       showToast("Please connect your wallet first", "warning");
       return;
     }
-
     try {
-      const staked = await isStaked(currentWalletAddress);
+      const staked = await isStaked(walletAddress);
       setIsUserStaked(staked);
       showToast(
         staked ? "You are currently staked" : "You are not staked yet",
@@ -559,10 +555,12 @@ const LandingPage: React.FC = () => {
               )}
               <button
                 onClick={checkStake}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
+                className={`px-4 py-2 rounded transition-colors ${isUserStaked ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"
+                  } text-white`}
               >
-                Check Stake
+                {isUserStaked ? "Staked" : "Check Stake"}
               </button>
+
             </div>
           </div>
         </header>
@@ -570,9 +568,8 @@ const LandingPage: React.FC = () => {
         {/* Main Content */}
         <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
           {/* Chat Section */}
-          <section className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-            isSidebarOpen ? 'w-full md:w-1/2' : 'w-full'
-          }`}>
+          <section className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? 'w-full md:w-1/2' : 'w-full'
+            }`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Chat with Agent</h2>
@@ -590,7 +587,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            <div 
+            <div
               ref={chatContainerRef}
               className="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth"
             >
@@ -627,9 +624,8 @@ const LandingPage: React.FC = () => {
 
           {/* AI Agents Sidebar */}
           <aside
-            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
-              isSidebarOpen ? "w-full md:w-1/2" : "w-12"
-            } ${isSidebarOpen ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
+            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${isSidebarOpen ? "w-full md:w-1/2" : "w-12"
+              } ${isSidebarOpen ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
           >
             <button
               onClick={() => setIsSidebarOpen((prev) => !prev)}
