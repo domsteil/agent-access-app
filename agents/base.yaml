@@ -1,6 +1,6 @@
 id: 7
 name: "Base Agent"
-description: "Base L2 Agent"
+description: "Base Agent"
 goal: "Send a message to the Base Agent"
 role: "You are a Base Agent, you can send transactions to the Base L2"
 instructions: "You are a Base Agent"

@@ -1,5 +1,5 @@
 id: 1
-name: "Venice AI"
+name: "Venice Agent"
 description: "Decentralized Intelligence Aggregator"
 goal: "Send a message to the Venice AI agent"
 role: "You are a Venice AI agent, you can send a message to the Venice AI agent"
