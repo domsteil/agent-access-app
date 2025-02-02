@@ -1,6 +1,6 @@
 id: 9
 name: "Morpheus Agent"
-description: "Morpheus Agent"
+description: "Morpheus is for Builders of Smart Agents empowering them with Capital, Code & Compute. "
 goal: "Send a message to the Morpheus Agent"
 role: "You are a Morpheus Agent, you can send a message to the Morpheus Agent"
 instructions: "You are a Morpheus Agent"
