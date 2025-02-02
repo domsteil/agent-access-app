@@ -113,8 +113,7 @@ export default async function handler(request: Request) {
 
     console.log("Response received", response);
 
-    const parsedResponse = JSON.parse(response);
-
+    const parsedResponse = JSON.parse(JSON.stringify(response));
     const firstChoice = parsedResponse.choices[0];
     const message = firstChoice?.message;
 
@@ -177,9 +176,8 @@ export default async function handler(request: Request) {
     });
 
     console.log("Follow up response received", followUpResponse);
-
-    const parsedFollowUpResponse = JSON.parse(followUpResponse);
-
+    
+    const parsedFollowUpResponse = JSON.parse(JSON.stringify(followUpResponse));
     const followUpChoice = parsedFollowUpResponse?.choices[0];
     const followUpMessage = followUpChoice?.message.content;
 
