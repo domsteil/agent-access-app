@@ -1,27 +1,6 @@
 {
   "version": 3,
   "middleware": {},
-  "functions": {
-    "/api/ai/venice": {
-      "files": [
-        "server/edge-runtime-webpack.js",
-        "server/pages/api/ai/venice.js"
-      ],
-      "name": "pages/api/ai/venice",
-      "page": "/api/ai/venice",
-      "matchers": [
-        {
-          "regexp": "^/api/ai/venice$",
-          "originalSource": "/api/ai/venice"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "pEywW1oShc05NncCjPD65+2Z3W8NJDzFUHyUd8JpoZc="
-      }
-    }
-  },
+  "functions": {},
   "sortedMiddleware": []
 }
