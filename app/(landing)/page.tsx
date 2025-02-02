@@ -22,6 +22,7 @@ import {
   ChevronRight,
   Send,
   Check,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { debounce } from "lodash";
@@ -379,6 +380,14 @@ const AgentCard: React.FC<{
 
 AgentCard.displayName = "AgentCard";
 
+// ---------- Thinking Indicator ----------
+const ThinkingIndicator: React.FC = () => (
+  <div className="flex items-center justify-center p-4">
+    <Loader2 className="animate-spin mr-2" size={20} />
+    <span className="text-gray-600">Thinking...</span>
+  </div>
+);
+
 // ---------- Main Component ----------
 const LandingPage: React.FC = () => {
   const { walletAddress, sdk, handleWalletConnection } = useWallet();
@@ -599,212 +608,214 @@ const LandingPage: React.FC = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <header className="sticky top-0 z-50 p-4 bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center gap-4">
-              {sdk ? (
-                <Connect sdk={sdk} onConnect={handleWalletConnection} />
-              ) : (
-                <div className="text-gray-600">Loading Base Wallet...</div>
-              )}
-              <button
-                onClick={checkStake}
-                className={`px-4 py-2 rounded transition-colors ${
-                  isUserStaked
-                    ? "bg-green-500 hover:bg-green-600"
-                    : "bg-blue-500 hover:bg-blue-600"
-                } text-white`}
-              >
-                {isUserStaked ? "Staked" : "Check Stake"}
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Main Content */}
-        <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
-          {/* Chat Section */}
-          <section
-            className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-              isSidebarOpen ? "w-full md:w-1/2" : "w-full"
-            }`}
-          >
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={selectedAgentId}
-                    onChange={(e) => setSelectedAgentId(Number(e.target.value))}
-                    className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
-                  >
-                    {availableAgentsForDropdown.map((agent) => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name}
-                      </option>
-                    ))}
-                  </select>
-                  {/* New Chat / Clear Conversation Button */}
-                  <button
-                    onClick={clearConversation}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-900 px-3 py-2 rounded"
-                  >
-                    New
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div
-              ref={chatContainerRef}
-              className="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth"
-            >
-              {messages.map((msg) => (
-                <ChatMessage key={msg.id} message={msg} />
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-
-            {/* Input Box */}
-            <div className="sticky bottom-0 z-10 p-4 border-t border-gray-200 bg-white shadow-lg">
-              <div className="flex items-end gap-2">
-                <Textarea
-                  ref={inputRef}
-                  placeholder="Type your message here... (Shift + Enter for new line)"
-                  className="flex-grow text-gray-900 min-h-[60px] max-h-[200px] resize-none bg-gray-50 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={loading}
-                  spellCheck
-                />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <header className="sticky top-0 z-50 p-4 bg-white border-b border-gray-200 shadow-sm">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
+              <div className="flex items-center gap-4">
+                {sdk ? (
+                  <Connect sdk={sdk} onConnect={handleWalletConnection} />
+                ) : (
+                  <div className="text-gray-600">Loading Base Wallet...</div>
+                )}
                 <button
-                  onClick={() => debouncedHandleChat()}
-                  disabled={loading || !inputValue.trim()}
-                  className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[60px]"
+                  onClick={checkStake}
+                  className={`px-4 py-2 rounded transition-colors ${
+                    isUserStaked
+                      ? "bg-green-500 hover:bg-green-600"
+                      : "bg-blue-500 hover:bg-blue-600"
+                  } text-white`}
                 >
-                  <Send size={20} />
-                  {loading ? "Sending..." : "Send"}
+                  {isUserStaked ? "Staked" : "Check Stake"}
                 </button>
               </div>
             </div>
-          </section>
+          </header>
 
-          {/* AI Agents Sidebar */}
-          <aside
-            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
-              isSidebarOpen ? "w-full md:w-1/2" : "w-12"
-            } ${isSidebarOpen ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
-          >
-            <button
-              onClick={() => setIsSidebarOpen((prev) => !prev)}
-              className="absolute top-4 -left-3 transform bg-white border border-gray-300 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow"
-              aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+          {/* Main Content */}
+          <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
+            {/* Chat Section */}
+            <section
+              className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+                isSidebarOpen ? "w-full md:w-1/2" : "w-full"
+              }`}
             >
-              {isSidebarOpen ? (
-                <ChevronRight size={16} />
-              ) : (
-                <ChevronLeft size={16} />
-              )}
-            </button>
-            {isSidebarOpen && (
-              <div className="h-full overflow-y-auto p-4">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Available Agents
-                </h2>
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                    Filters
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="modelFilter"
-                        className="text-sm text-gray-600"
-                      >
-                        Model
-                      </label>
-                      <select
-                        id="modelFilter"
-                        value={agentFilters.model}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            model: e.target.value,
-                          }))
-                        }
-                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Models</option>
-                        {filterOptions.models.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="typeFilter"
-                        className="text-sm text-gray-600"
-                      >
-                        Type
-                      </label>
-                      <select
-                        id="typeFilter"
-                        value={agentFilters.type}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            type: e.target.value,
-                          }))
-                        }
-                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Types</option>
-                        {filterOptions.types.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={selectedAgentId}
+                      onChange={(e) => setSelectedAgentId(Number(e.target.value))}
+                      className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
+                    >
+                      {availableAgentsForDropdown.map((agent) => (
+                        <option key={agent.id} value={agent.id}>
+                          {agent.name}
+                        </option>
+                      ))}
+                    </select>
+                    {/* New Chat / Clear Conversation Button */}
+                    <button
+                      onClick={clearConversation}
+                      className="bg-gray-300 hover:bg-gray-400 text-gray-900 px-3 py-2 rounded"
+                    >
+                      New
+                    </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
-                  {filteredAgents.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      No agents match your filters
-                    </div>
-                  ) : (
-                    filteredAgents.map((agent) => (
-                      <AgentCard
-                        key={agent.id}
-                        agent={agent}
-                        onStake={handleStake}
-                        isUserStaked={isUserStaked}
-                        selected={agent.id === selectedAgentId}
-                        onSelect={setSelectedAgentId}
-                      />
-                    ))
-                  )}
+              </div>
+
+              <div
+                ref={chatContainerRef}
+                className="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth"
+              >
+                {messages.map((msg) => (
+                  <ChatMessage key={msg.id} message={msg} />
+                ))}
+                {/* Render the thinking indicator when loading */}
+                {loading && <ThinkingIndicator />}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input Box */}
+              <div className="sticky bottom-0 z-10 p-4 border-t border-gray-200 bg-white shadow-lg">
+                <div className="flex items-end gap-2">
+                  <Textarea
+                    ref={inputRef}
+                    placeholder="Type your message here... (Shift + Enter for new line)"
+                    className="flex-grow text-gray-900 min-h-[60px] max-h-[200px] resize-none bg-gray-50 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={loading}
+                    spellCheck
+                  />
+                  <button
+                    onClick={() => debouncedHandleChat()}
+                    disabled={loading || !inputValue.trim()}
+                    className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[60px]"
+                  >
+                    <Send size={20} />
+                    {loading ? "Sending..." : "Send"}
+                  </button>
                 </div>
               </div>
-            )}
-          </aside>
-        </main>
-      </div>
-    </div>
-          <div className="mt-12 flex flex-col items-center justify-center"> 
-            <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
-              <a href="https://mor.org" target="_blank" rel="noopener noreferrer"> 
-                <img src="/images/mor.png" alt="Morpheus" className="w-18 h-10" />
-              </a>
-            </h1>
+            </section>
+
+            {/* AI Agents Sidebar */}
+            <aside
+              className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
+                isSidebarOpen ? "w-full md:w-1/2" : "w-12"
+              } ${isSidebarOpen ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+            >
+              <button
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                className="absolute top-4 -left-3 transform bg-white border border-gray-300 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow"
+                aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+              >
+                {isSidebarOpen ? (
+                  <ChevronRight size={16} />
+                ) : (
+                  <ChevronLeft size={16} />
+                )}
+              </button>
+              {isSidebarOpen && (
+                <div className="h-full overflow-y-auto p-4">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">
+                    Available Agents
+                  </h2>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                      Filters
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="modelFilter"
+                          className="text-sm text-gray-600"
+                        >
+                          Model
+                        </label>
+                        <select
+                          id="modelFilter"
+                          value={agentFilters.model}
+                          onChange={(e) =>
+                            setAgentFilters((prev) => ({
+                              ...prev,
+                              model: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All Models</option>
+                          {filterOptions.models.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="typeFilter"
+                          className="text-sm text-gray-600"
+                        >
+                          Type
+                        </label>
+                        <select
+                          id="typeFilter"
+                          value={agentFilters.type}
+                          onChange={(e) =>
+                            setAgentFilters((prev) => ({
+                              ...prev,
+                              type: e.target.value,
+                            }))
+                          }
+                          className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">All Types</option>
+                          {filterOptions.types.map((type) => (
+                            <option key={type} value={type}>
+                              {type}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {filteredAgents.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No agents match your filters
+                      </div>
+                    ) : (
+                      filteredAgents.map((agent) => (
+                        <AgentCard
+                          key={agent.id}
+                          agent={agent}
+                          onStake={handleStake}
+                          isUserStaked={isUserStaked}
+                          selected={agent.id === selectedAgentId}
+                          onSelect={setSelectedAgentId}
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </aside>
+          </main>
         </div>
-        </>
+      </div>
+      <div className="mt-12 flex flex-col items-center justify-center"> 
+        <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
+          <a href="https://mor.org" target="_blank" rel="noopener noreferrer"> 
+            <img src="/images/mor.png" alt="Morpheus" className="w-18 h-10" />
+          </a>
+        </h1>
+      </div>
+    </>
   );
 };
 

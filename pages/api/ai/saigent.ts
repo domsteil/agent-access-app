@@ -1,5 +1,3 @@
-import OpenAI from "openai";
-
 export const runtime = "edge";
 
 // --- Interfaces ---
@@ -93,34 +91,32 @@ export default async function handler(request: Request) {
       return createErrorResponse("API Key not configured", 500);
     }
 
-    // Initialize the Venice client.
-    const venice = new OpenAI({
-      apiKey,
-      baseURL: "https://api.venice.ai/api/v1",
-    });
+    // --- First Completion API Call (for tool call) ---
+    const firstRequestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.2-3b",
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+        tool_choice: { type: "function", function: { name: "getTokenAddressAndTicker" } },
+        tools: [TOOL_DEFINITION],
+        stream: false,
+      }),
+    };
 
-    // Create the chat completion request.
-    const response = await venice.chat.completions.create({
-      model: "llama-3.2-3b",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages,
-      ],
-      tool_choice: { type: "function", function: { name: "getTokenAddressAndTicker" } },
-      tools: [TOOL_DEFINITION],
-      stream: false,
-    });
+    const firstResponse = await fetch("https://api.venice.ai/api/v1/chat/completions", firstRequestOptions);
+    if (!firstResponse.ok) {
+      throw new Error(`HTTP error! status: ${firstResponse.status}`);
+    }
+    const completionData = await firstResponse.json();
+    console.log("First completion response received", completionData);
 
-    console.log("Response received", response);
-
-    const parsedResponse = JSON.parse(JSON.stringify(response));
-    const firstChoice = parsedResponse.choices[0];
-    const message = firstChoice?.message;
-
-    // Extract tool call information.
-    const toolCalls = message?.tool_calls;
-
-    // Parse the arguments from the first tool call.
+    const firstChoice = completionData.choices?.[0];
+    const messageResult = firstChoice?.message;
+    const toolCalls = messageResult?.tool_calls;
     const toolCallArgs = toolCalls?.[0]?.function.arguments;
     console.log("Tool call arguments:", toolCallArgs);
 
@@ -140,50 +136,54 @@ export default async function handler(request: Request) {
     console.log("Token address:", tokenAddress);
     console.log("Ticker:", ticker);
 
-    // Call the sentiment analysis API.
     const sentimentResponse = await fetch("https://3e84-4-15-123-185.ngrok-free.app/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        token_address: tokenAddress,  // Ensure parameter names match the external API.
+        token_address: tokenAddress,
         token_symbol: ticker,
       }),
     });
 
-    // Sentiment analysis response
     const sentimentData = await sentimentResponse.json();
-
-    const sentimentScore = sentimentData.score ? sentimentData.score : 0;
-    const status = sentimentData.status ? sentimentData.status : "error";
-    const risk_level = sentimentData.risk_level ? sentimentData.risk_level : "unknown";
-    const components = sentimentData.components ? sentimentData.components : [];
-    const analysis = sentimentData.analysis ? sentimentData.analysis : [];
-    const logs = sentimentData.logs ? sentimentData.logs : [];
-
     console.log("Sentiment data received", sentimentData);
 
-    const sentimentMessage = `The sentiment of the token ${ticker} (${tokenAddress}) is the following: ${sentimentScore}. The status of the sentiment analysis is ${status}. The risk level of the sentiment analysis is ${risk_level}. The components of the sentiment analysis are ${components}. The analysis of the sentiment analysis is ${analysis}. The logs of the sentiment analysis are ${logs}.`;
+    const sentimentScore = sentimentData.score || 0;
+    const status = sentimentData.status || "error";
+    const risk_level = sentimentData.risk_level || "unknown";
+    const components = sentimentData.components || [];
+    const analysis = sentimentData.analysis || [];
+    const logs = sentimentData.logs || [];
+
+    const sentimentMessage = `The sentiment of the token ${ticker} (${tokenAddress}) is the following: ${sentimentScore}. The status of the sentiment analysis is ${status}. The risk level is ${risk_level}. Components: ${components}. Analysis: ${analysis}. Logs: ${logs}.`;
 
     messages.push({ role: "assistant", content: sentimentMessage });
 
-    // Follow up sentiment analysis call
-    const followUpResponse = await venice.chat.completions.create({
-      model: "deepseek-r1-llama-70b",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        ...messages,
-      ],
-    });
+    const followUpRequestOptions = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "deepseek-r1-llama-70b",
+        messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
+      }),
+    };
 
-    console.log("Follow up response received", followUpResponse);
+    const followUpResponse = await fetch("https://api.venice.ai/api/v1/chat/completions", followUpRequestOptions);
+    if (!followUpResponse.ok) {
+      throw new Error(`HTTP error! status: ${followUpResponse.status}`);
+    }
+    const followUpData = await followUpResponse.json();
+    console.log("Follow-up response received", followUpData);
     
-    const parsedFollowUpResponse = JSON.parse(JSON.stringify(followUpResponse));
-    const followUpChoice = parsedFollowUpResponse?.choices[0];
-    const followUpMessage = followUpChoice?.message.content;
+    const followUpChoice = followUpData.choices?.[0];
+    const followUpMessage = followUpChoice?.message?.content;
 
     // Construct the final JSON response.
     const jsonResponse = {
-      id: response.id,
+      id: followUpData.id,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
       model: "deepseek-r1-llama-70b",
@@ -191,10 +191,10 @@ export default async function handler(request: Request) {
         {
           index: 0,
           message: { role: "assistant", content: followUpMessage },
-          finish_reason: followUpChoice.finish_reason,
+          finish_reason: followUpChoice?.finish_reason,
         },
       ],
-      usage: response.usage,
+      usage: followUpData.usage,
     };
 
     console.log("Sending response:", jsonResponse);
