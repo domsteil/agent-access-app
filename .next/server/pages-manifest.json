@@ -1,1 +1,3 @@
-{}
+{
+  "/api/ai/saigent": "pages/api/ai/saigent.js"
+}

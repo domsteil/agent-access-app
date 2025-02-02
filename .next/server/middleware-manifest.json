@@ -1,6 +1,27 @@
 {
   "version": 3,
   "middleware": {},
-  "functions": {},
+  "functions": {
+    "/api/ai/saigent": {
+      "files": [
+        "server/edge-runtime-webpack.js",
+        "server/pages/api/ai/saigent.js"
+      ],
+      "name": "pages/api/ai/saigent",
+      "page": "/api/ai/saigent",
+      "matchers": [
+        {
+          "regexp": "^/api/ai/saigent$",
+          "originalSource": "/api/ai/saigent"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "pGUMRGefptx2pPGztmQk7yDCXrCfOXEzyjzSKAtmXHo="
+      }
+    }
+  },
   "sortedMiddleware": []
 }

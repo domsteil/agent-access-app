@@ -15,7 +15,7 @@ interface ChatMessage {
 }
 
 // Constants
-const SYSTEM_PROMPT = `You are an intelligent AI assistant that performs sentiment analysis on memecoins. 
+const SYSTEM_PROMPT = `You are an intelligent AI assistant that performs sentiment analysis on memecoins. Use the ticker and address from the user (NOT JUSR FOR VVV), use the ticket and contract address provided by the user. 
 You are given a message and you need to analyze the sentiment of the message. 
 You need to ask the user for the token address and the ticker. 
 Once you have the token address and the ticker respond back with those two parameters. 
@@ -140,7 +140,9 @@ export default async function handler(request: Request) {
 Score: ${sentimentData.score || 0}
 Status: ${sentimentData.status || "unknown"}
 Risk Level: ${sentimentData.risk_level || "unknown"}
-Analysis: ${sentimentData.analysis || "unknown"}`;
+Components: ${sentimentData.components}
+Analysis: ${sentimentData.analysis}
+Technical Details: ${sentimentData.logs}`;
 
     // Follow-up call: Generate analysis of sentiment data
     const followUpRequestOptions = {
