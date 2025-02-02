@@ -9,17 +9,47 @@ import { createCoinbaseWalletSDK } from "@coinbase/wallet-sdk";
 import { AGENTS } from "@/agents";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Send, Check } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
 import { debounce } from "lodash";
 
 // ---------- Types ----------
+type ActionParameter = {
+  type: 'number' | 'string';
+  description: string;
+  required: boolean;
+};
+
+type ActionParameters = {
+  amount?: ActionParameter;
+  recipient?: ActionParameter;
+  [key: string]: ActionParameter | undefined;
+};
+
+type Action = {
+  name: string;
+  parameters: ActionParameters;
+};
+
+type Agent = {
+  id: number;
+  name: string;
+  description: string;
+  image?: string;
+  model?: string;
+  type?: string;
+  chain?: string;
+  agentAddress?: string;
+  agentURL?: string;
+  stakeNeeded?: boolean;
+  actions?: Action[];
+};
+
 type Message = {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: number;
 };
-
-type Agent = typeof AGENTS[number];
 
 interface FilterState {
   model: string;
@@ -83,6 +113,10 @@ const generateMessageId = (): string => {
 };
 
 // ---------- Custom Hooks ----------
+
+/**
+ * Manages wallet connection state and initializes the Coinbase Wallet SDK.
+ */
 const useWallet = () => {
   const [walletAddress, setWalletAddress] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -124,11 +158,12 @@ const useWallet = () => {
         }
       } catch (error) {
         console.error("Error initializing wallet SDK:", error);
+        // Removed showToast reference from here.
       }
     };
 
     initializeSDK();
-  }, []);
+  }, []); // Removed showToast from dependency array
 
   const handleWalletConnection = useCallback((address: string) => {
     setWalletAddress(address);
@@ -224,7 +259,6 @@ const AgentCard: React.FC<{
   selected: boolean;
   onSelect: (id: number) => void;
 }> = React.memo(({ agent, onStake, isUserStaked, selected, onSelect }) => {
-  
   const handleClick = useCallback(() => {
     if (agent.stakeNeeded && !isUserStaked) {
       alert("Staking required to access this agent");
@@ -233,6 +267,26 @@ const AgentCard: React.FC<{
       onSelect(agent.id);
     }
   }, [agent, isUserStaked, onStake, onSelect]);
+
+  const renderActions = () => {
+    if (!agent.actions?.length) return null;
+
+    return (
+      <div className="mt-4 space-y-2">
+        <h4 className="text-sm font-semibold text-gray-700">Available Actions:</h4>
+        <div className="flex flex-wrap gap-2">
+          {agent.actions.map((action, index) => (
+            <span 
+              key={`${action.name}-${index}`}
+              className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
+            >
+              {action.name}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`
@@ -249,8 +303,8 @@ const AgentCard: React.FC<{
           />
         )}
         <h3 className="text-gray-900 text-xl font-bold mb-1">{agent.name}</h3>
-        <p className="text-gray-700 text-sm">{agent.description}</p>
-        <div className="flex flex-wrap gap-2 mt-2">
+        <p className="text-gray-700 text-sm mb-2">{agent.description}</p>
+        <div className="flex flex-wrap gap-2">
           {agent.model && (
             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
               {agent.model}
@@ -266,7 +320,13 @@ const AgentCard: React.FC<{
               {agent.chain}
             </span>
           )}
+          {agent.agentAddress && (
+            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+              {`${agent.agentAddress.slice(0, 6)}...${agent.agentAddress.slice(-4)}`}
+            </span>
+          )}
         </div>
+        {renderActions()}
       </div>
       
       <button
@@ -308,6 +368,7 @@ const LandingPage: React.FC = () => {
   });
   const [isUserStaked, setIsUserStaked] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = usePersistentState(LOCAL_STORAGE_KEYS.SIDEBAR_STATE, true);
+  const { showToast } = useToast();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -422,7 +483,7 @@ const LandingPage: React.FC = () => {
         inputRef.current?.focus();
       }
     }, 300),
-    [messages, selectedAgentId]
+    [messages, selectedAgentId, inputValue]
   );
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -437,7 +498,7 @@ const LandingPage: React.FC = () => {
     const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
     
     if (!currentWalletAddress) {
-      alert("Please connect your wallet first");
+      showToast("Please connect your wallet first", "warning");
       return;
     }
 
@@ -446,39 +507,40 @@ const LandingPage: React.FC = () => {
       setIsUserStaked(staked);
       
       if (staked) {
-        alert("You are already staked!");
+        showToast("You are already staked!", "success");
       } else {
         window.open(
-          `https://dashboard.mor.org/#/builders/${currentWalletAddress}?network=base`,
+          `https://dashboard.mor.org/#/builders/0x3082ff65dbbc9af673b283c31d546436e07875a57eaffa505ce04de42b279306?network=base`,
           "_blank"
         );
       }
     } catch (error) {
       console.error("Error checking stake status:", error);
-      alert("Error checking stake status");
+      showToast("Error checking stake status", "error");
     }
-  }, [walletAddress]);
+  }, [walletAddress, showToast]);
 
   // Enhanced stake status check
   const checkStake = useCallback(async () => {
-    const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
+    const currentWalletAddress = walletAddress;
     
     if (!currentWalletAddress) {
-        alert("Please connect your wallet first");
+      showToast("Please connect your wallet first", "warning");
       return;
     }
 
     try {
       const staked = await isStaked(currentWalletAddress);
       setIsUserStaked(staked);
-      alert(
-        staked ? "You are currently staked" : "You are not staked yet"
+      showToast(
+        staked ? "You are currently staked" : "You are not staked yet",
+        staked ? "success" : "info"
       );
     } catch (error) {
       console.error("Error checking stake status:", error);
-      alert("Error checking stake status");
+      showToast("Error checking stake status", "error");
     }
-  }, [walletAddress]);
+  }, [walletAddress, showToast]);
 
   return (
     <div className="min-h-screen bg-gray-50">

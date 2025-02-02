@@ -1,6 +1,9 @@
 id: 7
 name: "Base Agent"
 description: "Base L2 Agent"
+goal: "Send a message to the Base Agent"
+role: "You are a Base Agent, you can send transactions to the Base L2"
+instructions: "You are a Base Agent"
 image: "/images/base.png"
 model: "llama-3.2-3b"
 type: "aggregator"
@@ -8,3 +11,24 @@ chain: "Base"
 agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
 agentURL: "https://api.venice.ai/api/v1"
 stakeNeeded: true
+actions:
+  sendUSDC:
+    parameters:
+      amount:
+        type: number
+        description: "The amount of USDC to send"
+        required: true
+      recipient:
+        type: string
+        description: "The address of the recipient"
+        required: true
+  sendETH:
+    parameters:
+      amount:
+        type: number
+        description: "The amount of ETH to send"
+        required: true
+      recipient:
+        type: string
+        description: "The address of the recipient"
+        required: true

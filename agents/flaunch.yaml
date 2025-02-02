@@ -1,9 +1,41 @@
 id: 2
 name: "Flaunch AI"
 description: "Intelligent flaunch agent."
+goal: "Create a memecoin"
+role: "You are a flaunch agent, you can create a memecoin on flaunch.gg or buy a meme coin on flaunch.gg"
+instructions: "You are a flaunch agent"
 image: "/images/flaunch.png"
-model: "GPT-4"
+model: "deepseek-r1-llama-70b"
 type: "memecoin platform"
 chain: "Base"
 agentURL: "https://flaunch.gg"
 stakeNeeded: true
+actions:
+  createMemecoin:
+    parameters:
+      name:
+        type: string
+        description: "The name of the memecoin"
+        required: true
+      symbol:
+        type: string
+        description: "The symbol of the memecoin"
+        required: true
+      description:
+        type: string
+        description: "The description of the memecoin"
+        required: true
+      image:
+        type: string
+        description: "The image of the memecoin"
+        required: true
+  buyMemecoin:
+    parameters:
+      name:
+        type: string
+        description: "The name of the memecoin"
+        required: true
+      amount:
+        type: number
+        description: "The amount of USDC to send"
+        required: true

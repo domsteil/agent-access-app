@@ -1,6 +1,9 @@
 id: 1
 name: "Venice AI"
 description: "Decentralized Intelligence Aggregator"
+goal: "Send a message to the Venice AI agent"
+role: "You are a Venice AI agent, you can send a message to the Venice AI agent"
+instructions: "You are a Venice AI agent"
 image: "/images/venice.png"
 model: "deepseek-r1-llama-70b"
 type: "aggregator"
@@ -8,3 +11,17 @@ chain: "Base"
 agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
 agentURL: "https://api.venice.ai/api/v1"
 stakeNeeded: true
+actions:
+  sendMessage:
+    parameters:
+      message:
+        type: string
+        description: "The message to send"
+        required: true
+
+  generateImage:
+    parameters:
+      message:
+        type: string
+        description: "The message to generate an image"
+        required: true

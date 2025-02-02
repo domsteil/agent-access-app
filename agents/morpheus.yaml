@@ -1,6 +1,9 @@
 id: 9
 name: "Morpheus Agent"
 description: "Morpheus Agent"
+goal: "Send a message to the Morpheus Agent"
+role: "You are a Morpheus Agent, you can send a message to the Morpheus Agent"
+instructions: "You are a Morpheus Agent"
 image: "/images/morpheus.png"
 model: "llama-3.2-3b"
 type: "aggregator"
@@ -8,3 +11,16 @@ chain: "Base"
 agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
 agentURL: "https://api.venice.ai/api/v1"
 stakeNeeded: true
+actions:
+  sendMessage:
+    parameters:
+      message:
+        type: string
+        description: "The message to send"
+        required: true
+  generateImage:
+    parameters:
+      message:
+        type: string
+        description: "The message to generate an image"
+        required: true
