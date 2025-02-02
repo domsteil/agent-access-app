@@ -1,13 +1,6 @@
 "use client";
 
-import React, {
-  useEffect,
-  useRef,
-  useState,
-  useMemo,
-  useCallback,
-  KeyboardEvent,
-} from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback, KeyboardEvent } from "react";
 import Textarea from "react-textarea-autosize";
 import ReactMarkdown from "react-markdown";
 import { Connect } from "@/components/wallet/Connect";
@@ -15,14 +8,7 @@ import { isStaked } from "@/utils/check_stake";
 import { createCoinbaseWalletSDK } from "@coinbase/wallet-sdk";
 import { AGENTS } from "@/agents";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import {
-  ChevronUp,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  Check,
-} from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Send, Check } from "lucide-react";
 import { debounce } from "lodash";
 
 // ---------- Types ----------
@@ -46,16 +32,16 @@ interface FilterState {
 const API_ROUTES: Record<number, string> = {
   1: "/api/ai/venice",
   2: "/api/ai/tech",
-  3: "/api/ai/flaunch",
+  3: "/api/ai/flaunch", 
   4: "/api/ai/crypto",
   5: "/api/ai/social",
 };
 
 const LOCAL_STORAGE_KEYS = {
-  WALLET_ADDRESS: "walletAddress",
-  SELECTED_AGENT: "selectedAgent",
-  CHAT_MESSAGES: "chatMessages",
-  SIDEBAR_STATE: "sidebarState",
+  WALLET_ADDRESS: 'walletAddress',
+  SELECTED_AGENT: 'selectedAgent',
+  CHAT_MESSAGES: 'chatMessages',
+  SIDEBAR_STATE: 'sidebarState'
 } as const;
 
 // ---------- Helper Functions ----------
@@ -73,7 +59,7 @@ const splitMessage = (body: string) => {
     "Finally,",
     "In conclusion,",
     "To summarize,",
-    "In summary,",
+    "In summary,"
   ];
 
   for (const phrase of transitionPhrases) {
@@ -88,18 +74,15 @@ const splitMessage = (body: string) => {
       }
     }
   }
-
+  
   return { reason: "", response: body };
 };
 
-const generateMessageId = (): string =>
-  `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const generateMessageId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
 
 // ---------- Custom Hooks ----------
-
-/**
- * Manages wallet connection state and initializes the Coinbase Wallet SDK.
- */
 const useWallet = () => {
   const [walletAddress, setWalletAddress] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -116,10 +99,12 @@ const useWallet = () => {
           appName: "Agent Access",
           preference: { options: "all" },
         });
+        
         setSDK(sdkInstance);
-
+        
         if (sdkInstance) {
           const provider = sdkInstance.getProvider();
+          
           provider.on("accountsChanged", (accounts: unknown) => {
             const accountArray = accounts as string[];
             if (accountArray?.[0]) {
@@ -153,9 +138,6 @@ const useWallet = () => {
   return { walletAddress, sdk, handleWalletConnection };
 };
 
-/**
- * A hook that persists state to localStorage.
- */
 const usePersistentState = <T,>(key: string, initialValue: T) => {
   const [state, setState] = useState<T>(() => {
     if (typeof window !== "undefined") {
@@ -173,7 +155,6 @@ const usePersistentState = <T,>(key: string, initialValue: T) => {
 };
 
 // ---------- Components ----------
-
 const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => {
   const isAssistant = message.role === "assistant";
   const hasThinkBlock = isAssistant && message.content.includes("<think>");
@@ -183,32 +164,24 @@ const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => 
   const [showReason, setShowReason] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Display the message timestamp
-  const formattedTimestamp = useMemo(
-    () => new Date(message.timestamp).toLocaleTimeString(),
-    [message.timestamp]
-  );
-
   const handleCopy = useCallback(() => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, []);
 
+  const formattedTimestamp = useMemo(() => {
+    return new Date(message.timestamp).toLocaleTimeString();
+  }, [message.timestamp]);
+
   return (
-    <div
-      className={`mb-3 flex ${
-        message.role === "user" ? "justify-end" : "justify-start"
-      }`}
-    >
+    <div className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
       <CopyToClipboard text={message.content} onCopy={handleCopy}>
         <div className="relative w-full max-w-[80%] group">
-          <div
-            className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
-              message.role === "user"
-                ? "bg-blue-600 text-white hover:shadow-lg"
-                : "bg-gray-100 text-gray-800 hover:shadow-lg"
-            }`}
-          >
+          <div className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
+            message.role === "user"
+              ? "bg-blue-600 text-white hover:shadow-lg"
+              : "bg-gray-100 text-gray-800 hover:shadow-lg"
+          }`}>
             <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
             <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
             {hasThinkBlock && reason && (
@@ -216,10 +189,9 @@ const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => 
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowReason((prev) => !prev);
+                    setShowReason(prev => !prev);
                   }}
                   className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
-                  aria-label={showReason ? "Hide Reasoning" : "Show Reasoning"}
                 >
                   {showReason ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                   {showReason ? "Hide Reasoning" : "Show Reasoning"}
@@ -252,8 +224,10 @@ const AgentCard: React.FC<{
   selected: boolean;
   onSelect: (id: number) => void;
 }> = React.memo(({ agent, onStake, isUserStaked, selected, onSelect }) => {
+  
   const handleClick = useCallback(() => {
     if (agent.stakeNeeded && !isUserStaked) {
+      alert("Staking required to access this agent");
       onStake(agent.id);
     } else {
       onSelect(agent.id);
@@ -261,12 +235,10 @@ const AgentCard: React.FC<{
   }, [agent, isUserStaked, onStake, onSelect]);
 
   return (
-    <div
-      className={`
-        bg-white border p-6 rounded-xl shadow-sm transition-all duration-200
-        ${selected ? "border-blue-500 shadow-md" : "border-gray-200 hover:shadow-xl"}
-      `}
-    >
+    <div className={`
+      bg-white border p-6 rounded-xl shadow-sm transition-all duration-200
+      ${selected ? 'border-blue-500 shadow-md' : 'border-gray-200 hover:shadow-xl'}
+    `}>
       <div className="relative">
         {agent.image && (
           <img
@@ -296,20 +268,21 @@ const AgentCard: React.FC<{
           )}
         </div>
       </div>
-
+      
       <button
         onClick={handleClick}
         className={`
           mt-4 w-full px-4 py-2 rounded transition-colors
-          ${
-            agent.stakeNeeded && !isUserStaked
-              ? "bg-green-500 hover:bg-green-600 text-white"
-              : "bg-blue-500 hover:bg-blue-600 text-white"
-          }
+          ${agent.stakeNeeded && !isUserStaked
+            ? 'bg-green-500 hover:bg-green-600 text-white'
+            : 'bg-blue-500 hover:bg-blue-600 text-white'}
         `}
-        aria-label={agent.stakeNeeded && !isUserStaked ? "Stake to Access" : "Access Agent"}
       >
-        {agent.stakeNeeded ? (isUserStaked ? "Staked" : "Stake to Access") : "Access Agent"}
+        {agent.stakeNeeded
+          ? isUserStaked
+            ? 'Staked'
+            : 'Stake to Access'
+          : 'Access Agent'}
       </button>
     </div>
   );
@@ -318,13 +291,9 @@ const AgentCard: React.FC<{
 AgentCard.displayName = "AgentCard";
 
 // ---------- Main Component ----------
-
 const LandingPage: React.FC = () => {
   const { walletAddress, sdk, handleWalletConnection } = useWallet();
-  const [messages, setMessages] = usePersistentState<Message[]>(
-    LOCAL_STORAGE_KEYS.CHAT_MESSAGES,
-    []
-  );
+  const [messages, setMessages] = usePersistentState<Message[]>(LOCAL_STORAGE_KEYS.CHAT_MESSAGES, []);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = usePersistentState<number>(
@@ -338,46 +307,58 @@ const LandingPage: React.FC = () => {
     hasImage: false,
   });
   const [isUserStaked, setIsUserStaked] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = usePersistentState<boolean>(
-    LOCAL_STORAGE_KEYS.SIDEBAR_STATE,
-    true
-  );
+  const [isSidebarOpen, setIsSidebarOpen] = usePersistentState(LOCAL_STORAGE_KEYS.SIDEBAR_STATE, true);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll: using an IntersectionObserver to ensure the latest message is in view.
+  // Improved auto-scroll handling
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  
   useEffect(() => {
-    if (!messagesEndRef.current) return;
+    if (!chatContainerRef.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const lastEntry = entries[entries.length - 1];
-        if (!lastEntry?.isIntersecting) {
-          lastEntry?.target.scrollIntoView({ behavior: "smooth" });
-        }
-      },
-      { threshold: 0.1 }
-    );
+    const container = chatContainerRef.current;
+    let lastScrollTop = container.scrollTop;
+    
+    const handleScroll = () => {
+      // If user scrolls up, disable auto-scroll
+      if (container.scrollTop < lastScrollTop) {
+        setShouldAutoScroll(false);
+      }
+      
+      // If user scrolls near bottom, enable auto-scroll
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      if (isNearBottom) {
+        setShouldAutoScroll(true);
+      }
+      
+      lastScrollTop = container.scrollTop;
+    };
 
-    observer.observe(messagesEndRef.current);
-    return () => observer.disconnect();
-  }, [messages]);
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  // Memoized filter options (ensuring type safety)
-  const filterOptions = useMemo(
-    () => ({
-      models: Array.from(new Set(AGENTS.map((a) => a.model).filter(Boolean))),
-      types: Array.from(new Set(AGENTS.map((a) => a.type).filter(Boolean))),
-      chains: Array.from(new Set(AGENTS.map((a) => a.chain).filter(Boolean))),
-    }),
-    []
-  );
+  // Handle auto-scrolling when new messages arrive
+  useEffect(() => {
+    if (shouldAutoScroll && messagesEndRef.current) {
+      const scrollOptions = { behavior: 'smooth' as const, block: 'end' as const };
+      messagesEndRef.current.scrollIntoView(scrollOptions);
+    }
+  }, [messages, shouldAutoScroll]);
 
-  // Filter agents based on current filter settings
+  // Memoized filter options with type safety
+  const filterOptions = useMemo(() => ({
+    models: Array.from(new Set(AGENTS.map(a => a.model).filter(Boolean))),
+    types: Array.from(new Set(AGENTS.map(a => a.type).filter(Boolean))),
+    chains: Array.from(new Set(AGENTS.map(a => a.chain).filter(Boolean))),
+  }), []);
+
+  // Filtered agents with performance optimization
   const filteredAgents = useMemo(() => {
-    return AGENTS.filter((agent) => {
+    return AGENTS.filter(agent => {
       const { model, type, chain, hasImage } = agentFilters;
       return (!model || agent.model === model) &&
              (!type || agent.type === type) &&
@@ -386,123 +367,75 @@ const LandingPage: React.FC = () => {
     });
   }, [agentFilters]);
 
-  // Debounced chat handler accepts the latest text as a parameter.
+  // Debounced chat handler
   const debouncedHandleChat = useMemo(
-    () =>
-      debounce(async (text: string) => {
-        const trimmedInput = text.trim();
-        if (!trimmedInput) return;
+    () => debounce(async () => {
+      const trimmedInput = inputValue.trim();
+      if (!trimmedInput) return;
 
-        const newMessage: Message = {
-          id: generateMessageId(),
-          role: "user",
-          content: trimmedInput,
-          timestamp: Date.now(),
-        };
+      const newMessage: Message = {
+        id: generateMessageId(),
+        role: "user",
+        content: trimmedInput,
+        timestamp: Date.now(),
+      };
 
-        setMessages((prev) => [...prev, newMessage]);
-        setInputValue("");
-        setLoading(true);
+      setMessages(prev => [...prev, newMessage]);
+      setInputValue("");
+      setLoading(true);
 
-        try {
-          const response = await fetch(API_ROUTES[selectedAgentId] ?? "/api/ai/venice", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: [...messages, newMessage] }),
-          });
+      try {
+        const response = await fetch(API_ROUTES[selectedAgentId] ?? "/api/ai/venice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: [...messages, newMessage] }),
+        });
 
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-
-          const data = await response.json();
-          const assistantMessageContent = data?.choices?.[0]?.message?.content;
-
-          if (assistantMessageContent) {
-            const assistantMessage: Message = {
-              id: generateMessageId(),
-              role: "assistant",
-              content: assistantMessageContent,
-              timestamp: Date.now(),
-            };
-            setMessages((prev) => [...prev, assistantMessage]);
-          } else {
-            throw new Error("No message content returned");
-          }
-        } catch (error) {
-          console.error("Error in chat:", error);
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: generateMessageId(),
-              role: "assistant",
-              content:
-                "Sorry, there was an error processing your request. Please try again.",
-              timestamp: Date.now(),
-            },
-          ]);
-        } finally {
-          setLoading(false);
-          inputRef.current?.focus();
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      }, 300),
+
+        const data = await response.json();
+        const assistantMessageContent = data?.choices?.[0]?.message?.content;
+        
+        if (assistantMessageContent) {
+          const assistantMessage: Message = {
+            id: generateMessageId(),
+            role: "assistant",
+            content: assistantMessageContent,
+            timestamp: Date.now(),
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        } else {
+          throw new Error("No message content returned");
+        }
+      } catch (error) {
+        console.error("Error in chat:", error);
+        setMessages(prev => [...prev, {
+          id: generateMessageId(),
+          role: "assistant",
+          content: "Sorry, there was an error processing your request. Please try again.",
+          timestamp: Date.now(),
+        }]);
+      } finally {
+        setLoading(false);
+        inputRef.current?.focus();
+      }
+    }, 300),
     [messages, selectedAgentId]
   );
 
-  // Cleanup debounced function on unmount
-  useEffect(() => {
-    return () => {
-      debouncedHandleChat.cancel();
-    };
-  }, [debouncedHandleChat]);
-
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        if (!loading) debouncedHandleChat(inputValue);
-      }
-    },
-    [loading, inputValue, debouncedHandleChat]
-  );
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (!loading) debouncedHandleChat();
+    }
+  }, [loading, debouncedHandleChat]);
 
   // Stake handling with error management
-  const handleStake = useCallback(
-    async (agentId: number) => {
-      const currentWalletAddress =
-        walletAddress ||
-        localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
-
-      if (!currentWalletAddress) {
-        alert("Please connect your wallet first.");
-        return;
-      }
-
-      try {
-        const staked = await isStaked(currentWalletAddress);
-        setIsUserStaked(staked);
-
-        if (staked) {
-          alert("You are already staked!");
-        } else {
-          window.open(
-            `https://dashboard.mor.org/#/builders/${currentWalletAddress}?network=base`,
-            "_blank"
-          );
-        }
-      } catch (error) {
-        console.error("Error checking stake status:", error);
-      }
-    },
-    [walletAddress]
-  );
-
-  // Enhanced stake status check
-  const checkStake = useCallback(async () => {
-    const currentWalletAddress =
-      walletAddress ||
-      localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
-
+  const handleStake = useCallback(async (agentId: number) => {
+    const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
+    
     if (!currentWalletAddress) {
       alert("Please connect your wallet first");
       return;
@@ -511,9 +444,39 @@ const LandingPage: React.FC = () => {
     try {
       const staked = await isStaked(currentWalletAddress);
       setIsUserStaked(staked);
-      alert(staked ? "You are currently staked" : "You are not staked yet");
+      
+      if (staked) {
+        alert("You are already staked!");
+      } else {
+        window.open(
+          `https://dashboard.mor.org/#/builders/${currentWalletAddress}?network=base`,
+          "_blank"
+        );
+      }
     } catch (error) {
       console.error("Error checking stake status:", error);
+      alert("Error checking stake status");
+    }
+  }, [walletAddress]);
+
+  // Enhanced stake status check
+  const checkStake = useCallback(async () => {
+    const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
+    
+    if (!currentWalletAddress) {
+        alert("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      const staked = await isStaked(currentWalletAddress);
+      setIsUserStaked(staked);
+      alert(
+        staked ? "You are currently staked" : "You are not staked yet"
+      );
+    } catch (error) {
+      console.error("Error checking stake status:", error);
+      alert("Error checking stake status");
     }
   }, [walletAddress]);
 
@@ -545,7 +508,9 @@ const LandingPage: React.FC = () => {
         {/* Main Content */}
         <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
           {/* Chat Section */}
-          <section className="w-full md:w-1/2 flex flex-col bg-white border-r border-gray-200">
+          <section className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+            isSidebarOpen ? 'w-full md:w-1/2' : 'w-full'
+          }`}>
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-gray-900">Chat with Agent</h2>
@@ -553,7 +518,6 @@ const LandingPage: React.FC = () => {
                   value={selectedAgentId}
                   onChange={(e) => setSelectedAgentId(Number(e.target.value))}
                   className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
-                  aria-label="Select chat agent"
                 >
                   {AGENTS.map((agent) => (
                     <option key={agent.id} value={agent.id}>
@@ -564,7 +528,7 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
 
-            <div
+            <div 
               ref={chatContainerRef}
               className="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth"
             >
@@ -586,13 +550,11 @@ const LandingPage: React.FC = () => {
                   onKeyDown={handleKeyDown}
                   disabled={loading}
                   spellCheck
-                  aria-label="Chat input"
                 />
                 <button
-                  onClick={() => debouncedHandleChat(inputValue)}
+                  onClick={() => debouncedHandleChat()}
                   disabled={loading || !inputValue.trim()}
                   className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[60px]"
-                  aria-label="Send message"
                 >
                   <Send size={20} />
                   {loading ? "Sending..." : "Send"}
@@ -604,15 +566,19 @@ const LandingPage: React.FC = () => {
           {/* AI Agents Sidebar */}
           <aside
             className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
-              isSidebarOpen ? "w-full md:w-1/2" : "w-8"
-            }`}
+              isSidebarOpen ? "w-full md:w-1/2" : "w-12"
+            } ${isSidebarOpen ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
           >
             <button
               onClick={() => setIsSidebarOpen((prev) => !prev)}
               className="absolute top-4 -left-3 transform bg-white border border-gray-300 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow"
               aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
-              {isSidebarOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              {isSidebarOpen ? (
+                <ChevronRight size={16} />
+              ) : (
+                <ChevronLeft size={16} />
+              )}
             </button>
 
             {isSidebarOpen && (
@@ -630,17 +596,12 @@ const LandingPage: React.FC = () => {
                       <select
                         id="modelFilter"
                         value={agentFilters.model}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({ ...prev, model: e.target.value }))
-                        }
+                        onChange={(e) => setAgentFilters(prev => ({ ...prev, model: e.target.value }))}
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                        aria-label="Filter by model"
                       >
                         <option value="">All Models</option>
                         {filterOptions.models.map((model) => (
-                          <option key={model} value={model}>
-                            {model}
-                          </option>
+                          <option key={model} value={model}>{model}</option>
                         ))}
                       </select>
                     </div>
@@ -652,17 +613,12 @@ const LandingPage: React.FC = () => {
                       <select
                         id="typeFilter"
                         value={agentFilters.type}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({ ...prev, type: e.target.value }))
-                        }
+                        onChange={(e) => setAgentFilters(prev => ({ ...prev, type: e.target.value }))}
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                        aria-label="Filter by type"
                       >
                         <option value="">All Types</option>
                         {filterOptions.types.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
+                          <option key={type} value={type}>{type}</option>
                         ))}
                       </select>
                     </div>
@@ -674,17 +630,12 @@ const LandingPage: React.FC = () => {
                       <select
                         id="chainFilter"
                         value={agentFilters.chain}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({ ...prev, chain: e.target.value }))
-                        }
+                        onChange={(e) => setAgentFilters(prev => ({ ...prev, chain: e.target.value }))}
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                        aria-label="Filter by chain"
                       >
                         <option value="">All Chains</option>
                         {filterOptions.chains.map((chain) => (
-                          <option key={chain} value={chain}>
-                            {chain}
-                          </option>
+                          <option key={chain} value={chain}>{chain}</option>
                         ))}
                       </select>
                     </div>
@@ -694,11 +645,8 @@ const LandingPage: React.FC = () => {
                         type="checkbox"
                         id="imageFilter"
                         checked={agentFilters.hasImage}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({ ...prev, hasImage: e.target.checked }))
-                        }
+                        onChange={(e) => setAgentFilters(prev => ({ ...prev, hasImage: e.target.checked }))}
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        aria-label="Filter agents that have an image"
                       />
                       <label htmlFor="imageFilter" className="text-sm text-gray-600">
                         Has Image
