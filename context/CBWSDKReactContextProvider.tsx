@@ -1,41 +1,71 @@
-import { CoinbaseWalletSDK as CoinbaseWalletSDKHEAD, Preference } from '@coinbase/wallet-sdk';
+import { CoinbaseWalletSDK, Preference } from '@coinbase/wallet-sdk';
 import latestPkgJson from '@coinbase/wallet-sdk/package.json';
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
+// Type declarations for window.ethereum and related interfaces
+declare global {
+  interface Window {
+    setPopupUrl: (url: string) => void;
+    ethereum?: {
+      communicator?: {
+        url: URL;
+      };
+      isMetaMask?: boolean;
+      isCoinbaseWallet?: boolean;
+      on(event: string, callback: (...args: any[]) => void): void;
+      off(event: string, callback: (...args: any[]) => void): void;
+      request(args: { method: string; params?: any[] }): Promise<any>;
+      disconnect?(): void;
+    };
+  }
+}
+
+// Provider Props
 type CBWSDKProviderProps = {
   children: React.ReactNode;
 };
 
-const CBWSDKReactContext = React.createContext(null);
+// Context Type
+type CBWSDKContextValue = {
+  sdk: any;
+  provider: any;
+  option: OptionsType;  // Remove undefined since we always have a default
+  setPreference: (option: OptionsType) => void;
+  sdkVersion: SDKVersionType | undefined;
+  setSDKVersion: (version: SDKVersionType) => void;
+  scwUrl: ScwUrlType | undefined;
+  setScwUrlAndSave: (url: ScwUrlType) => void;
+  config: Preference;
+  setConfig: React.Dispatch<React.SetStateAction<Preference>>;
+} | null;
 
+// Constants and their types
 const SELECTED_SDK_KEY = 'selected_sdk_version';
-export const sdkVersions = ['HEAD', latestPkgJson.version, '3.9.3', '3.7.2'] as const;
-export type SDKVersionType = (typeof sdkVersions)[number];
-
 const SELECTED_SCW_URL_KEY = 'scw_url';
+const OPTIONS_KEY = 'option_key';
+
+export const sdkVersions = ['HEAD', latestPkgJson.version, '3.9.3', '3.7.2'] as const;
+export type SDKVersionType = typeof sdkVersions[number];
+
 export const scwUrls = [
   'https://keys.coinbase.com/connect',
   'https://keys-beta.coinbase.com/connect',
   'https://keys-dev.coinbase.com/connect',
   'http://localhost:3005/connect',
 ] as const;
-export type ScwUrlType = (typeof scwUrls)[number];
+export type ScwUrlType = typeof scwUrls[number];
 
-const OPTIONS_KEY = 'option_key';
 export const options = ['all', 'smartWalletOnly', 'eoaOnly'] as const;
-export type OptionsType = (typeof options)[number];
+export type OptionsType = typeof options[number];
 
-declare global {
-  interface Window {
-    setPopupUrl: (url: string) => void;
-  }
-}
+// Create the context
+const CBWSDKReactContext = React.createContext<CBWSDKContextValue>(null);
 
+// Initialize window.setPopupUrl
 if (typeof window !== 'undefined') {
   window.setPopupUrl = (url: string) => {
-    const communicator = window.ethereum?.communicator;
-    if (communicator) {
-      communicator.url = new URL(url);
+    if (window.ethereum?.communicator) {
+      window.ethereum.communicator.url = new URL(url);
     }
   };
 }
@@ -43,110 +73,108 @@ if (typeof window !== 'undefined') {
 export function CBWSDKReactContextProvider({ children }: CBWSDKProviderProps) {
   const previousScwUrlRef = useRef<ScwUrlType | undefined>();
   const [version, setVersion] = React.useState<SDKVersionType | undefined>(undefined);
-  const [option, setOption] = React.useState<OptionsType | undefined>(undefined);
+  const [option, setOption] = React.useState<OptionsType>('all'); // Set default value
   const [config, setConfig] = React.useState<Preference>({
-    options: option,
+    options: 'all', // Use literal default value
     attribution: {
       auto: false,
     },
   });
-  const [sdk, setSdk] = React.useState(null);
-  const [provider, setProvider] = React.useState(null);
+  const [sdk, setSdk] = React.useState<any>(null);
+  const [provider, setProvider] = React.useState<any>(null);
   const [scwUrl, setScwUrl] = React.useState<ScwUrlType | undefined>(undefined);
 
+  // Load saved version
   useEffect(() => {
     if (version === undefined) {
       const savedVersion = localStorage.getItem(SELECTED_SDK_KEY) as SDKVersionType;
       setVersion(
-        sdkVersions.includes(savedVersion) ? (savedVersion as SDKVersionType) : sdkVersions[0]
+        sdkVersions.includes(savedVersion) ? savedVersion : sdkVersions[0]
       );
     }
   }, [version]);
 
+  // Load saved option
   useEffect(() => {
-    if (option === undefined) {
-      const option = localStorage.getItem(OPTIONS_KEY) as OptionsType;
-      setOption(options.includes(option) ? (option as OptionsType) : 'all');
+    const savedOption = localStorage.getItem(OPTIONS_KEY);
+    if (savedOption && options.includes(savedOption as OptionsType)) {
+      setOption(savedOption as OptionsType);
+      setConfig(prev => ({
+        ...prev,
+        options: savedOption as OptionsType
+      }));
     }
-  }, [option]);
+  }, []);
 
+  // Load saved SCW URL
   useEffect(() => {
     if (scwUrl === undefined) {
       const savedScwUrl = localStorage.getItem(SELECTED_SCW_URL_KEY) as ScwUrlType;
-      setScwUrl(scwUrls.includes(savedScwUrl) ? (savedScwUrl as ScwUrlType) : scwUrls[0]);
+      setScwUrl(scwUrls.includes(savedScwUrl) ? savedScwUrl : scwUrls[0]);
     }
   }, [scwUrl]);
 
+  // Initialize SDK and provider
   useEffect(() => {
-    // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
     let cbwsdk;
     let preference: Preference | string;
+
+    // Configure SDK based on version
     if (version === 'HEAD' || version === latestPkgJson.version) {
-      const SDK = version === 'HEAD' ? CoinbaseWalletSDKHEAD : CoinbaseWalletSDKLatest;
+      const SDK = CoinbaseWalletSDK;
       cbwsdk = new SDK({
         appName: 'SDK Playground',
-        appChainIds: [84532, 8452],
+        appChainIds: [84532, 8452], // Base, Base Sepolia
       });
-      if (version === 'HEAD') {
-        preference = { options: option, attribution: config.attribution };
-      } else {
-        preference = { options: option };
-      }
+      preference = version === 'HEAD'
+        ? { options: option, attribution: config.attribution }
+        : { options: option };
       setSdk(cbwsdk);
     } else if (version === '3.9.3' || version === '3.7.2') {
-      const SDK = version === '3.9.3' ? CoinbaseWalletSDK393 : CoinbaseWalletSDK372;
+      const SDK = CoinbaseWalletSDK;
       cbwsdk = new SDK({
-        appName: 'Test App',
-        enableMobileWalletLink: true,
+        appName: 'SDK Playground'
       });
       preference = 'jsonRpcUrlMock';
       setSdk(cbwsdk);
     }
-    if (!cbwsdk) {
-      return;
-    }
-    const cbwprovider = cbwsdk.makeWeb3Provider(preference);
 
+    if (!cbwsdk) return;
+
+    // Initialize provider
+    const cbwprovider = cbwsdk.makeWeb3Provider();
+
+    // Event handlers
     const handleConnect = (info: { chainId: string }) => {
-      // eslint-disable-next-line no-console
       console.log('🟢 Connected:', info);
     };
 
     const handleDisconnect = () => {
-      // eslint-disable-next-line no-console
       console.log('🔴 Disconnect detected');
       location.reload();
     };
 
     const handleAccountsChanged = (accounts: string[]) => {
-      // eslint-disable-next-line no-console
       console.log('👤 Accounts changed:', accounts);
     };
 
     const handleChainChanged = (chainId: string) => {
-      // eslint-disable-next-line no-console
       console.log('⛓️ Chain changed:', chainId);
     };
 
-    const handleMessage = (message: { type: string; data: unknown }) => {
-      // eslint-disable-next-line no-console
-      console.log('📨 Message received:', message);
-    };
-
+    // Add event listeners
     cbwprovider.on('connect', handleConnect);
     cbwprovider.on('accountsChanged', handleAccountsChanged);
     cbwprovider.on('chainChanged', handleChainChanged);
-    cbwprovider.on('message', handleMessage);
     cbwprovider.on('disconnect', handleDisconnect);
 
-    // Add request handler to check for 4100 errors
+    // Error handling for requests
     const originalRequest = cbwprovider.request.bind(cbwprovider);
     cbwprovider.request = async (...args) => {
       try {
         return await originalRequest(...args);
-      } catch (error) {
+      } catch (error: any) {
         if (error?.code === 4100) {
-          // eslint-disable-next-line no-console
           console.log('🔴 4100 error detected, disconnecting');
           handleDisconnect();
         }
@@ -157,21 +185,20 @@ export function CBWSDKReactContextProvider({ children }: CBWSDKProviderProps) {
     window.ethereum = cbwprovider;
     setProvider(cbwprovider);
 
+    // Cleanup
     return () => {
       cbwprovider.off('connect', handleConnect);
       cbwprovider.off('disconnect', handleDisconnect);
       cbwprovider.off('accountsChanged', handleAccountsChanged);
       cbwprovider.off('chainChanged', handleChainChanged);
-      cbwprovider.off('message', handleMessage);
     };
   }, [version, option, config]);
 
+  // Handle SCW URL changes
   useEffect(() => {
     if (version === 'HEAD' || version === latestPkgJson.version) {
       if (scwUrl && previousScwUrlRef.current && scwUrl !== previousScwUrlRef.current) {
-        if (provider?.disconnect) {
-          provider.disconnect();
-        }
+        provider?.disconnect?.();
       }
       if (scwUrl) {
         previousScwUrlRef.current = scwUrl;
@@ -180,6 +207,7 @@ export function CBWSDKReactContextProvider({ children }: CBWSDKProviderProps) {
     }
   }, [version, scwUrl, provider]);
 
+  // Callback handlers
   const setPreference = useCallback((option: OptionsType) => {
     localStorage.setItem(OPTIONS_KEY, option);
     setOption(option);
@@ -195,6 +223,7 @@ export function CBWSDKReactContextProvider({ children }: CBWSDKProviderProps) {
     setScwUrl(url);
   }, []);
 
+  // Context value
   const ctx = useMemo(
     () => ({
       sdk,
@@ -225,9 +254,10 @@ export function CBWSDKReactContextProvider({ children }: CBWSDKProviderProps) {
   return <CBWSDKReactContext.Provider value={ctx}>{children}</CBWSDKReactContext.Provider>;
 }
 
+// Custom hook to use the CBWSDK context
 export function useCBWSDK() {
   const context = React.useContext(CBWSDKReactContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useCBWSDK must be used within a CBWSDKProvider');
   }
   return context;
