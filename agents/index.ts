@@ -6,6 +6,7 @@ import tech from "./tech.yaml";
 import fountain from "./fountain.yaml";
 import cryptosense from "./cryptosense.yaml";
 import base from "./base.yaml";
+import morpheus from "./morpheus.yaml";
 
 export type Agent = {
   id: number;
@@ -18,4 +19,4 @@ export type Agent = {
   stakeNeeded?: boolean;
 };
 
-export const AGENTS: Agent[] = [venice, flaunch, base];
+export const AGENTS: Agent[] = [morpheus, venice, flaunch, base];

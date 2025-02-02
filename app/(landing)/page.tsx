@@ -62,7 +62,6 @@ const useWallet = () => {
     if (sdkInstance) {
       const provider = sdkInstance.getProvider();
       provider.on("accountsChanged", (accounts: unknown) => {
-        // Cast accounts to a string array
         const accountArray = accounts as string[];
         if (accountArray && accountArray.length > 0) {
           const address = accountArray[0];
@@ -105,10 +104,10 @@ interface ChatMessageProps {
 const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
   <div className={`mb-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
     <div
-      className={`max-w-[80%] break-words p-3 rounded-lg shadow-sm transition-all duration-200 ${
+      className={`max-w-[80%] break-words p-3 rounded-lg shadow transition-all duration-200 ${
         message.role === "user"
-          ? "bg-blue-600 text-white rounded-br-none hover:shadow-lg"
-          : "bg-gray-200 text-gray-900 rounded-bl-none hover:shadow-lg"
+          ? "bg-blue-600 text-white rounded-br-none"
+          : "bg-gray-200 text-gray-900 rounded-bl-none"
       }`}
     >
       <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -116,7 +115,7 @@ const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
   </div>
 ));
 
-// Agent Card component
+// Agent Card component with hover effect and refined styling
 interface AgentCardProps {
   agent: typeof AGENTS[number];
   onStake: (agentId: number) => void;
@@ -306,7 +305,11 @@ const LandingPage: React.FC = () => {
           Agent Access
         </h1>
         <div className="flex items-center gap-4">
-          {sdk && <Connect sdk={sdk} onConnect={handleWalletConnection} />}
+          {sdk ? (
+            <Connect sdk={sdk} onConnect={handleWalletConnection} />
+          ) : (
+            <div className="text-gray-600">Loading Wallet...</div>
+          )}
           <button
             onClick={checkStake}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
