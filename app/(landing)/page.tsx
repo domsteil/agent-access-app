@@ -810,7 +810,7 @@ const LandingPage: React.FC = () => {
           </a>
         </h1>
         <a
-          href="https://discord.gg/"
+          href="https://discord.gg/morpheusai"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -821,7 +821,7 @@ const LandingPage: React.FC = () => {
           />
         </a>
         <a
-          href="https://x.com"
+          href="https://x.com/"
           target="_blank"
           rel="noopener noreferrer"
         >
