@@ -14,12 +14,26 @@ import { Connect } from "@/components/wallet/Connect";
 import { isStaked } from "@/utils/check_stake";
 import { createCoinbaseWalletSDK } from "@coinbase/wallet-sdk";
 import { AGENTS } from "@/agents";
+import { CopyToClipboard } from "react-copy-to-clipboard";
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  Check,
+} from "lucide-react";
+import { debounce } from "lodash";
 
 // ---------- Types ----------
 type Message = {
+  id: string;
   role: "user" | "assistant";
   content: string;
+  timestamp: number;
 };
+
+type Agent = typeof AGENTS[number];
 
 interface FilterState {
   model: string;
@@ -28,7 +42,7 @@ interface FilterState {
   hasImage: boolean;
 }
 
-// ---------- API Routes ----------
+// ---------- Constants ----------
 const API_ROUTES: Record<number, string> = {
   1: "/api/ai/venice",
   2: "/api/ai/tech",
@@ -37,442 +51,686 @@ const API_ROUTES: Record<number, string> = {
   5: "/api/ai/social",
 };
 
+const LOCAL_STORAGE_KEYS = {
+  WALLET_ADDRESS: "walletAddress",
+  SELECTED_AGENT: "selectedAgent",
+  CHAT_MESSAGES: "chatMessages",
+  SIDEBAR_STATE: "sidebarState",
+} as const;
+
+// ---------- Helper Functions ----------
+const splitMessage = (body: string) => {
+  const thinkEndIndex = body.indexOf("</think>");
+  if (thinkEndIndex !== -1) {
+    return {
+      reason: body.substring(0, thinkEndIndex).trim(),
+      response: body.substring(thinkEndIndex + 8).trim(),
+    };
+  }
+
+  const transitionPhrases = [
+    "Putting it all together,",
+    "Finally,",
+    "In conclusion,",
+    "To summarize,",
+    "In summary,",
+  ];
+
+  for (const phrase of transitionPhrases) {
+    const idx = body.indexOf(phrase);
+    if (idx !== -1) {
+      const periodIdx = body.indexOf(".", idx);
+      if (periodIdx !== -1) {
+        return {
+          reason: body.substring(0, idx).trim(),
+          response: body.substring(periodIdx + 1).trim(),
+        };
+      }
+    }
+  }
+
+  return { reason: "", response: body };
+};
+
+const generateMessageId = (): string =>
+  `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 // ---------- Custom Hooks ----------
 
 /**
- * useWallet
- *
- * Handles Coinbase Wallet SDK initialization, account changes, and returns the current wallet address.
+ * Manages wallet connection state and initializes the Coinbase Wallet SDK.
  */
 const useWallet = () => {
   const [walletAddress, setWalletAddress] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("walletAddress") || "";
+      return localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS) || "";
     }
     return "";
   });
   const [sdk, setSDK] = useState<ReturnType<typeof createCoinbaseWalletSDK> | null>(null);
 
   useEffect(() => {
-    const sdkInstance = createCoinbaseWalletSDK({
-      appName: "Agent Access",
-      preference: { options: "all" },
-    });
-    setSDK(sdkInstance);
-    if (sdkInstance) {
-      const provider = sdkInstance.getProvider();
-      provider.on("accountsChanged", (accounts: unknown) => {
-        const accountArray = accounts as string[];
-        if (accountArray && accountArray.length > 0) {
-          const address = accountArray[0];
-          setWalletAddress(address);
-          localStorage.setItem("walletAddress", address);
-        } else {
-          setWalletAddress("");
-          localStorage.removeItem("walletAddress");
-        }
-      });
-      // Check for an existing connection
-      (async () => {
-        try {
+    const initializeSDK = async () => {
+      try {
+        const sdkInstance = createCoinbaseWalletSDK({
+          appName: "Agent Access",
+          preference: { options: "all" },
+        });
+        setSDK(sdkInstance);
+
+        if (sdkInstance) {
+          const provider = sdkInstance.getProvider();
+          provider.on("accountsChanged", (accounts: unknown) => {
+            const accountArray = accounts as string[];
+            if (accountArray?.[0]) {
+              setWalletAddress(accountArray[0]);
+              localStorage.setItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS, accountArray[0]);
+            } else {
+              setWalletAddress("");
+              localStorage.removeItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
+            }
+          });
+
           const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
-          if (accounts && accounts.length > 0) {
+          if (accounts?.[0]) {
             setWalletAddress(accounts[0]);
-            localStorage.setItem("walletAddress", accounts[0]);
+            localStorage.setItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS, accounts[0]);
           }
-        } catch (error) {
-          console.error("Error checking existing connection:", error);
         }
-      })();
-    }
+      } catch (error) {
+        console.error("Error initializing wallet SDK:", error);
+      }
+    };
+
+    initializeSDK();
   }, []);
 
   const handleWalletConnection = useCallback((address: string) => {
     setWalletAddress(address);
-    localStorage.setItem("walletAddress", address);
+    localStorage.setItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS, address);
   }, []);
 
   return { walletAddress, sdk, handleWalletConnection };
 };
 
+/**
+ * A hook that persists state to localStorage.
+ */
+const usePersistentState = <T,>(key: string, initialValue: T) => {
+  const [state, setState] = useState<T>(() => {
+    if (typeof window !== "undefined") {
+      const savedValue = localStorage.getItem(key);
+      return savedValue ? JSON.parse(savedValue) : initialValue;
+    }
+    return initialValue;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(key, JSON.stringify(state));
+  }, [key, state]);
+
+  return [state, setState] as const;
+};
+
 // ---------- Components ----------
 
-// Chat Message component with responsive chat bubbles
-interface ChatMessageProps {
-  message: Message;
-}
-const ChatMessage: React.FC<ChatMessageProps> = React.memo(({ message }) => (
-  <div className={`mb-2 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => {
+  const isAssistant = message.role === "assistant";
+  const hasThinkBlock = isAssistant && message.content.includes("<think>");
+  const { reason, response } = hasThinkBlock
+    ? splitMessage(message.content)
+    : { reason: "", response: message.content };
+  const [showReason, setShowReason] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Display the message timestamp
+  const formattedTimestamp = useMemo(
+    () => new Date(message.timestamp).toLocaleTimeString(),
+    [message.timestamp]
+  );
+
+  const handleCopy = useCallback(() => {
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, []);
+
+  return (
     <div
-      className={`max-w-[80%] break-words p-3 rounded-lg shadow transition-all duration-200 ${
-        message.role === "user"
-          ? "bg-blue-600 text-white rounded-br-none"
-          : "bg-gray-200 text-gray-900 rounded-bl-none"
+      className={`mb-3 flex ${
+        message.role === "user" ? "justify-end" : "justify-start"
       }`}
     >
-      <ReactMarkdown>{message.content}</ReactMarkdown>
+      <CopyToClipboard text={message.content} onCopy={handleCopy}>
+        <div className="relative w-full max-w-[80%] group">
+          <div
+            className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
+              message.role === "user"
+                ? "bg-blue-600 text-white hover:shadow-lg"
+                : "bg-gray-100 text-gray-800 hover:shadow-lg"
+            }`}
+          >
+            <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
+            <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
+            {hasThinkBlock && reason && (
+              <div className="mt-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowReason((prev) => !prev);
+                  }}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  aria-label={showReason ? "Hide Reasoning" : "Show Reasoning"}
+                >
+                  {showReason ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {showReason ? "Hide Reasoning" : "Show Reasoning"}
+                </button>
+                {showReason && (
+                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                    <ReactMarkdown className="prose max-w-none">{reason}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {copied && (
+            <div className="absolute top-2 right-2 text-xs text-green-500 flex items-center gap-1">
+              <Check size={12} /> Copied
+            </div>
+          )}
+        </div>
+      </CopyToClipboard>
     </div>
-  </div>
-));
+  );
+});
 
-// Agent Card component with hover effect and refined styling
-interface AgentCardProps {
-  agent: typeof AGENTS[number];
+ChatMessage.displayName = "ChatMessage";
+
+const AgentCard: React.FC<{
+  agent: Agent;
   onStake: (agentId: number) => void;
   isUserStaked: boolean;
-}
-const AgentCard: React.FC<AgentCardProps> = ({ agent, onStake, isUserStaked }) => (
-  <div className="bg-white border border-gray-200 p-4 rounded-lg shadow hover:shadow-xl transition-shadow flex flex-col justify-between">
-    <div>
-      {agent.image && (
-        <img
-          src={agent.image}
-          alt={`${agent.name} image`}
-          className="w-full h-32 object-cover rounded mb-3"
-        />
-      )}
-      <h3 className="text-gray-900 text-lg font-bold mb-1">{agent.name}</h3>
-      <p className="text-gray-700 text-sm">{agent.description}</p>
-      <p className="text-gray-500 text-xs mt-1">
-        Model: {agent.model} | Type: {agent.type} | Chain: {agent.chain}
-      </p>
-    </div>
-    {agent.stakeNeeded ? (
-      isUserStaked ? (
-        <div className="mt-4 bg-green-500 text-white px-3 py-2 rounded">
-          Staked
+  selected: boolean;
+  onSelect: (id: number) => void;
+}> = React.memo(({ agent, onStake, isUserStaked, selected, onSelect }) => {
+  const handleClick = useCallback(() => {
+    if (agent.stakeNeeded && !isUserStaked) {
+      onStake(agent.id);
+    } else {
+      onSelect(agent.id);
+    }
+  }, [agent, isUserStaked, onStake, onSelect]);
+
+  return (
+    <div
+      className={`
+        bg-white border p-6 rounded-xl shadow-sm transition-all duration-200
+        ${selected ? "border-blue-500 shadow-md" : "border-gray-200 hover:shadow-xl"}
+      `}
+    >
+      <div className="relative">
+        {agent.image && (
+          <img
+            src={agent.image}
+            alt={`${agent.name} image`}
+            className="w-full h-32 object-cover rounded-lg mb-4"
+            loading="lazy"
+          />
+        )}
+        <h3 className="text-gray-900 text-xl font-bold mb-1">{agent.name}</h3>
+        <p className="text-gray-700 text-sm">{agent.description}</p>
+        <div className="flex flex-wrap gap-2 mt-2">
+          {agent.model && (
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+              {agent.model}
+            </span>
+          )}
+          {agent.type && (
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+              {agent.type}
+            </span>
+          )}
+          {agent.chain && (
+            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+              {agent.chain}
+            </span>
+          )}
         </div>
-      ) : (
-        <button
-          onClick={() => onStake(agent.id)}
-          className="mt-4 bg-green-500 hover:bg-green-600 transition-colors text-white px-3 py-2 rounded"
-        >
-          Stake to access this Agent
-        </button>
-      )
-    ) : (
-      <button className="mt-4 bg-blue-500 hover:bg-blue-600 transition-colors text-white px-3 py-2 rounded">
-        Access Agent
+      </div>
+
+      <button
+        onClick={handleClick}
+        className={`
+          mt-4 w-full px-4 py-2 rounded transition-colors
+          ${
+            agent.stakeNeeded && !isUserStaked
+              ? "bg-green-500 hover:bg-green-600 text-white"
+              : "bg-blue-500 hover:bg-blue-600 text-white"
+          }
+        `}
+        aria-label={agent.stakeNeeded && !isUserStaked ? "Stake to Access" : "Access Agent"}
+      >
+        {agent.stakeNeeded ? (isUserStaked ? "Staked" : "Stake to Access") : "Access Agent"}
       </button>
-    )}
-  </div>
-);
+    </div>
+  );
+});
+
+AgentCard.displayName = "AgentCard";
 
 // ---------- Main Component ----------
+
 const LandingPage: React.FC = () => {
   const { walletAddress, sdk, handleWalletConnection } = useWallet();
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = usePersistentState<Message[]>(
+    LOCAL_STORAGE_KEYS.CHAT_MESSAGES,
+    []
+  );
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedAgentId, setSelectedAgentId] = useState<number>(AGENTS[0].id);
+  const [selectedAgentId, setSelectedAgentId] = usePersistentState<number>(
+    LOCAL_STORAGE_KEYS.SELECTED_AGENT,
+    AGENTS[0].id
+  );
   const [agentFilters, setAgentFilters] = useState<FilterState>({
     model: "",
     type: "",
     chain: "",
     hasImage: false,
   });
-  const [isUserStaked, setIsUserStaked] = useState<boolean>(false);
+  const [isUserStaked, setIsUserStaked] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = usePersistentState<boolean>(
+    LOCAL_STORAGE_KEYS.SIDEBAR_STATE,
+    true
+  );
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to the latest chat message
+  // Auto-scroll: using an IntersectionObserver to ensure the latest message is in view.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!messagesEndRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const lastEntry = entries[entries.length - 1];
+        if (!lastEntry?.isIntersecting) {
+          lastEntry?.target.scrollIntoView({ behavior: "smooth" });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(messagesEndRef.current);
+    return () => observer.disconnect();
   }, [messages]);
 
-  // Memoized filter options
-  const models = useMemo(
-    () => Array.from(new Set(AGENTS.map((a) => a.model).filter(Boolean))),
-    []
-  );
-  const types = useMemo(
-    () => Array.from(new Set(AGENTS.map((a) => a.type).filter(Boolean))),
-    []
-  );
-  const chains = useMemo(
-    () => Array.from(new Set(AGENTS.map((a) => a.chain).filter(Boolean))),
+  // Memoized filter options (ensuring type safety)
+  const filterOptions = useMemo(
+    () => ({
+      models: Array.from(new Set(AGENTS.map((a) => a.model).filter(Boolean))),
+      types: Array.from(new Set(AGENTS.map((a) => a.type).filter(Boolean))),
+      chains: Array.from(new Set(AGENTS.map((a) => a.chain).filter(Boolean))),
+    }),
     []
   );
 
-  // Filter agents based on filter state
+  // Filter agents based on current filter settings
   const filteredAgents = useMemo(() => {
     return AGENTS.filter((agent) => {
-      if (agentFilters.model && agent.model !== agentFilters.model) return false;
-      if (agentFilters.type && agent.type !== agentFilters.type) return false;
-      if (agentFilters.chain && agent.chain !== agentFilters.chain) return false;
-      if (agentFilters.hasImage && !agent.image) return false;
-      return true;
+      const { model, type, chain, hasImage } = agentFilters;
+      return (!model || agent.model === model) &&
+             (!type || agent.type === type) &&
+             (!chain || agent.chain === chain) &&
+             (!hasImage || agent.image);
     });
   }, [agentFilters]);
 
-  // Handle chat submission
-  const handleChat = useCallback(async () => {
-    const trimmedInput = inputValue.trim();
-    if (!trimmedInput) return;
-    const newUserMessage: Message = { role: "user", content: trimmedInput };
-    const updatedMessages = [...messages, newUserMessage];
-    setMessages(updatedMessages);
-    setInputValue("");
-    setLoading(true);
+  // Debounced chat handler accepts the latest text as a parameter.
+  const debouncedHandleChat = useMemo(
+    () =>
+      debounce(async (text: string) => {
+        const trimmedInput = text.trim();
+        if (!trimmedInput) return;
 
-    const endpoint = API_ROUTES[selectedAgentId] ?? "/api/ai/venice";
-    try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
-      });
-      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-      const data = await res.json();
-      const assistantMessageContent = data?.choices?.[0]?.message?.content;
-      if (assistantMessageContent) {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: assistantMessageContent },
-        ]);
-      } else {
-        throw new Error("No message content returned");
+        const newMessage: Message = {
+          id: generateMessageId(),
+          role: "user",
+          content: trimmedInput,
+          timestamp: Date.now(),
+        };
+
+        setMessages((prev) => [...prev, newMessage]);
+        setInputValue("");
+        setLoading(true);
+
+        try {
+          const response = await fetch(API_ROUTES[selectedAgentId] ?? "/api/ai/venice", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: [...messages, newMessage] }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          const assistantMessageContent = data?.choices?.[0]?.message?.content;
+
+          if (assistantMessageContent) {
+            const assistantMessage: Message = {
+              id: generateMessageId(),
+              role: "assistant",
+              content: assistantMessageContent,
+              timestamp: Date.now(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+          } else {
+            throw new Error("No message content returned");
+          }
+        } catch (error) {
+          console.error("Error in chat:", error);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: generateMessageId(),
+              role: "assistant",
+              content:
+                "Sorry, there was an error processing your request. Please try again.",
+              timestamp: Date.now(),
+            },
+          ]);
+        } finally {
+          setLoading(false);
+          inputRef.current?.focus();
+        }
+      }, 300),
+    [messages, selectedAgentId]
+  );
+
+  // Cleanup debounced function on unmount
+  useEffect(() => {
+    return () => {
+      debouncedHandleChat.cancel();
+    };
+  }, [debouncedHandleChat]);
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (!loading) debouncedHandleChat(inputValue);
       }
-    } catch (error) {
-      console.error("Error in chat:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, there was an error processing your request.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      inputRef.current?.focus();
-    }
-  }, [inputValue, messages, selectedAgentId]);
+    },
+    [loading, inputValue, debouncedHandleChat]
+  );
 
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!loading) handleChat();
-    }
-  }, [loading, handleChat]);
+  // Stake handling with error management
+  const handleStake = useCallback(
+    async (agentId: number) => {
+      const currentWalletAddress =
+        walletAddress ||
+        localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
 
-  // Handle staking for an agent that requires staking
-  const handleStake = useCallback(async (agentId: number) => {
-    const currentWalletAddress =
-      walletAddress || localStorage.getItem("walletAddress") || "";
-    if (!currentWalletAddress) {
-      alert("Please connect your wallet first.");
-      return;
-    }
-    try {
-      const staked = await isStaked(currentWalletAddress);
-      setIsUserStaked(staked);
-      if (staked) {
-        alert("You are already staked to this agent.");
-      } else {
-        alert(`Staking to agent with ID: ${agentId}`);
-        // Insert your staking logic here
+      if (!currentWalletAddress) {
+        alert("Please connect your wallet first.");
+        return;
       }
-    } catch (error) {
-      console.error("Error checking stake status:", error);
-      alert("Error checking stake status. Please try again.");
-    }
-  }, [walletAddress]);
 
-  // Check stake status (via header button)
+      try {
+        const staked = await isStaked(currentWalletAddress);
+        setIsUserStaked(staked);
+
+        if (staked) {
+          alert("You are already staked!");
+        } else {
+          window.open(
+            `https://dashboard.mor.org/#/builders/${currentWalletAddress}?network=base`,
+            "_blank"
+          );
+        }
+      } catch (error) {
+        console.error("Error checking stake status:", error);
+      }
+    },
+    [walletAddress]
+  );
+
+  // Enhanced stake status check
   const checkStake = useCallback(async () => {
     const currentWalletAddress =
-      walletAddress || localStorage.getItem("walletAddress") || "";
+      walletAddress ||
+      localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
+
     if (!currentWalletAddress) {
-      alert("Please connect your wallet first.");
+      alert("Please connect your wallet first");
       return;
     }
+
     try {
       const staked = await isStaked(currentWalletAddress);
       setIsUserStaked(staked);
-      alert(staked ? "You are already staked." : "You are not staked yet.");
+      alert(staked ? "You are currently staked" : "You are not staked yet");
     } catch (error) {
       console.error("Error checking stake status:", error);
-      alert("Error checking stake status. Please try again.");
     }
   }, [walletAddress]);
 
   return (
-    <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
-      <header className="p-4 bg-white border-b border-gray-200 flex flex-col md:flex-row items-center justify-between">
-        <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
-          Agent Access
-        </h1>
-        <div className="flex items-center gap-4">
-          {sdk ? (
-            <Connect sdk={sdk} />
-          ) : (
-            <div className="text-gray-600">Loading Wallet...</div>
-          )}
-          <button
-            onClick={checkStake}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          >
-            Check Stake
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-grow flex flex-col md:flex-row overflow-hidden">
-        {/* Chat Section */}
-        <section className="w-full md:w-1/2 flex flex-col bg-white border-b md:border-b-0 md:border-r border-gray-200">
-          <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row items-center justify-between">
-            <label htmlFor="agentSelect" className="text-gray-900 mr-2 whitespace-nowrap">
-              Select Agent for Chat:
-            </label>
-            <select
-              id="agentSelect"
-              value={selectedAgentId}
-              onChange={(e) => setSelectedAgentId(Number(e.target.value))}
-              className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300 w-full sm:w-auto"
-            >
-              {AGENTS.map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-grow overflow-y-auto p-4 space-y-3">
-            {messages.map((msg, index) => (
-              <ChatMessage key={index} message={msg} />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Improved Send Box */}
-          <div className="sticky bottom-0 z-10 p-4 border-t border-gray-200 bg-gray-50 shadow-inner">
-            <div className="flex">
-              <Textarea
-                ref={inputRef}
-                placeholder="Type your message here..."
-                className="flex-grow text-gray-900 min-h-[60px] resize-none bg-white px-4 py-3 rounded-l border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                autoFocus
-                spellCheck={false}
-                autoComplete="off"
-                autoCorrect="off"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={loading}
-              />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <header className="sticky top-0 z-50 p-4 bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
+            <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
+              Agent Access
+            </h1>
+            <div className="flex items-center gap-4">
+              {sdk ? (
+                <Connect sdk={sdk} onConnect={handleWalletConnection} />
+              ) : (
+                <div className="text-gray-600">Loading Wallet...</div>
+              )}
               <button
-                onClick={handleChat}
-                disabled={loading}
-                className="bg-blue-500 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-r hover:bg-blue-600 transition-colors disabled:opacity-50"
+                onClick={checkStake}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
               >
-                {loading ? "Sending..." : "Send"}
+                Check Stake
               </button>
             </div>
           </div>
-        </section>
+        </header>
 
-        {/* AI Agents Section */}
-        <aside className="w-full md:w-1/2 flex flex-col bg-white p-4 overflow-y-auto border-t md:border-t-0 md:border-l border-gray-200">
-          <h2 className="text-gray-900 font-bold text-xl mb-4">AI Agents</h2>
-
-          <div className="mb-4 p-4 bg-gray-100 border border-gray-200 rounded">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex flex-col">
-                <label htmlFor="filterModel" className="text-gray-900 text-sm">
-                  Model
-                </label>
+        {/* Main Content */}
+        <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
+          {/* Chat Section */}
+          <section className="w-full md:w-1/2 flex flex-col bg-white border-r border-gray-200">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Chat with Agent</h2>
                 <select
-                  id="filterModel"
-                  value={agentFilters.model}
-                  onChange={(e) =>
-                    setAgentFilters((prev) => ({ ...prev, model: e.target.value }))
-                  }
+                  value={selectedAgentId}
+                  onChange={(e) => setSelectedAgentId(Number(e.target.value))}
                   className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
+                  aria-label="Select chat agent"
                 >
-                  <option value="">All</option>
-                  {models.map((model) => (
-                    <option key={model} value={model}>
-                      {model}
+                  {AGENTS.map((agent) => (
+                    <option key={agent.id} value={agent.id}>
+                      {agent.name}
                     </option>
                   ))}
                 </select>
-              </div>
-
-              <div className="flex flex-col">
-                <label htmlFor="filterType" className="text-gray-900 text-sm">
-                  Type
-                </label>
-                <select
-                  id="filterType"
-                  value={agentFilters.type}
-                  onChange={(e) =>
-                    setAgentFilters((prev) => ({ ...prev, type: e.target.value }))
-                  }
-                  className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
-                >
-                  <option value="">All</option>
-                  {types.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col">
-                <label htmlFor="filterChain" className="text-gray-900 text-sm">
-                  Chain
-                </label>
-                <select
-                  id="filterChain"
-                  value={agentFilters.chain}
-                  onChange={(e) =>
-                    setAgentFilters((prev) => ({ ...prev, chain: e.target.value }))
-                  }
-                  className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
-                >
-                  <option value="">All</option>
-                  {chains.map((chain) => (
-                    <option key={chain} value={chain}>
-                      {chain}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center">
-                <label htmlFor="filterImage" className="text-gray-900 text-sm mr-2">
-                  Has Image
-                </label>
-                <input
-                  id="filterImage"
-                  type="checkbox"
-                  checked={agentFilters.hasImage}
-                  onChange={(e) =>
-                    setAgentFilters((prev) => ({ ...prev, hasImage: e.target.checked }))
-                  }
-                  className="h-4 w-4"
-                />
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4">
-            {filteredAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                onStake={handleStake}
-                isUserStaked={isUserStaked}
-              />
-            ))}
-          </div>
-        </aside>
-      </main>
+            <div
+              ref={chatContainerRef}
+              className="flex-grow overflow-y-auto p-4 space-y-3 scroll-smooth"
+            >
+              {messages.map((msg) => (
+                <ChatMessage key={msg.id} message={msg} />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Box */}
+            <div className="sticky bottom-0 z-10 p-4 border-t border-gray-200 bg-white shadow-lg">
+              <div className="flex items-end gap-2">
+                <Textarea
+                  ref={inputRef}
+                  placeholder="Type your message here... (Shift + Enter for new line)"
+                  className="flex-grow text-gray-900 min-h-[60px] max-h-[200px] resize-none bg-gray-50 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={loading}
+                  spellCheck
+                  aria-label="Chat input"
+                />
+                <button
+                  onClick={() => debouncedHandleChat(inputValue)}
+                  disabled={loading || !inputValue.trim()}
+                  className="flex items-center gap-2 bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed h-[60px]"
+                  aria-label="Send message"
+                >
+                  <Send size={20} />
+                  {loading ? "Sending..." : "Send"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* AI Agents Sidebar */}
+          <aside
+            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
+              isSidebarOpen ? "w-full md:w-1/2" : "w-8"
+            }`}
+          >
+            <button
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="absolute top-4 -left-3 transform bg-white border border-gray-300 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow"
+              aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
+            >
+              {isSidebarOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
+
+            {isSidebarOpen && (
+              <div className="h-full overflow-y-auto p-4">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Available Agents</h2>
+
+                {/* Filters */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Filters</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="modelFilter" className="text-sm text-gray-600">
+                        Model
+                      </label>
+                      <select
+                        id="modelFilter"
+                        value={agentFilters.model}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({ ...prev, model: e.target.value }))
+                        }
+                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        aria-label="Filter by model"
+                      >
+                        <option value="">All Models</option>
+                        {filterOptions.models.map((model) => (
+                          <option key={model} value={model}>
+                            {model}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="typeFilter" className="text-sm text-gray-600">
+                        Type
+                      </label>
+                      <select
+                        id="typeFilter"
+                        value={agentFilters.type}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({ ...prev, type: e.target.value }))
+                        }
+                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        aria-label="Filter by type"
+                      >
+                        <option value="">All Types</option>
+                        {filterOptions.types.map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="chainFilter" className="text-sm text-gray-600">
+                        Chain
+                      </label>
+                      <select
+                        id="chainFilter"
+                        value={agentFilters.chain}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({ ...prev, chain: e.target.value }))
+                        }
+                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
+                        aria-label="Filter by chain"
+                      >
+                        <option value="">All Chains</option>
+                        {filterOptions.chains.map((chain) => (
+                          <option key={chain} value={chain}>
+                            {chain}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="imageFilter"
+                        checked={agentFilters.hasImage}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({ ...prev, hasImage: e.target.checked }))
+                        }
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        aria-label="Filter agents that have an image"
+                      />
+                      <label htmlFor="imageFilter" className="text-sm text-gray-600">
+                        Has Image
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agent Grid */}
+                <div className="grid grid-cols-1 gap-4">
+                  {filteredAgents.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      No agents match your filters
+                    </div>
+                  ) : (
+                    filteredAgents.map((agent) => (
+                      <AgentCard
+                        key={agent.id}
+                        agent={agent}
+                        onStake={handleStake}
+                        isUserStaked={isUserStaked}
+                        selected={agent.id === selectedAgentId}
+                        onSelect={setSelectedAgentId}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </aside>
+        </main>
+      </div>
     </div>
   );
 };

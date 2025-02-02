@@ -18,11 +18,11 @@ export default async function handler(request: Request) {
     // const tools = functions.map(f => ({ type: "function", function: f }));
 
     const response = await venice.chat.completions.create({
-      model: 'llama-3.2-3b',
+      model: 'deepseek-r1-llama-70b',
       messages: [
         {
           role: "system",
-          content: "You are an AI assistant."
+          content: "You are an intelligent AI assistant."
         },
         ...messages
       ],
@@ -37,7 +37,7 @@ export default async function handler(request: Request) {
       id: response.id,
       object: "chat.completion",
       created: Math.floor(Date.now() / 1000),
-      model: "llama-3.2-3b",
+      model: "deepseek-r1-llama-70b",
       choices: [
         {
           index: 0,

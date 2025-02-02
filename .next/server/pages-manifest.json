@@ -1,1 +1,3 @@
-{}
+{
+  "/api/ai/venice": "pages/api/ai/venice.js"
+}
