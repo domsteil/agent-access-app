@@ -1,8 +1,8 @@
 import { createCoinbaseWalletSDK } from '@coinbase/wallet-sdk';
-import React, { useCallback, useState, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 
 // Connect Wallet Component
-export function Connect({ sdk, onConnect }: { sdk: ReturnType<typeof createCoinbaseWalletSDK>, onConnect: () => void }) {
+export function Connect({ sdk }: { sdk: ReturnType<typeof createCoinbaseWalletSDK> }) {
 
 
   const [state, setState] = useState<string[]>();
@@ -19,12 +19,6 @@ export function Connect({ sdk, onConnect }: { sdk: ReturnType<typeof createCoinb
     console.info('customlogs: response', response);
     setState(response as string[]);
   }, [sdk]);
-
-  useEffect(() => {
-    if (state) {
-      onConnect();
-    }
-  }, [state, onConnect]);
 
   return (
     <>

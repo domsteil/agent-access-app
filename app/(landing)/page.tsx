@@ -306,7 +306,7 @@ const LandingPage: React.FC = () => {
         </h1>
         <div className="flex items-center gap-4">
           {sdk ? (
-            <Connect sdk={sdk} onConnect={handleWalletConnection} />
+            <Connect sdk={sdk} />
           ) : (
             <div className="text-gray-600">Loading Wallet...</div>
           )}
