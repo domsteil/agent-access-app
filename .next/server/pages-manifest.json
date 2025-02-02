@@ -1,3 +1,4 @@
 {
+  "/api/ai/venice": "pages/api/ai/venice.js",
   "/api/ai/saigent": "pages/api/ai/saigent.js"
 }

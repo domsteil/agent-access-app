@@ -805,7 +805,7 @@ const LandingPage: React.FC = () => {
       </div>
       <div className="mt-12 space-x-8 flex items-center justify-center">
         <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
-          <a href="https://mor.org" target="_blank" rel="noopener noreferrer">
+          <a href="https://dashboard.mor.org/#/builders/0x3082ff65dbbc9af673b283c31d546436e07875a57eaffa505ce04de42b279306?network=mainnet" target="_blank" rel="noopener noreferrer">
             <img src="/images/mor.png" alt="Morpheus" className="w-12 h-6" />
           </a>
         </h1>
