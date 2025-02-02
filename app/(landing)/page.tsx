@@ -821,7 +821,7 @@ const LandingPage: React.FC = () => {
           />
         </a>
         <a
-          href="https://x.com/"
+          href="https://x.com"
           target="_blank"
           rel="noopener noreferrer"
         >
@@ -830,6 +830,13 @@ const LandingPage: React.FC = () => {
             alt="X"
             className="w-6 h-6"
           />
+        </a>
+        <a
+          href="https://github.com/domsteil/agent-access-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img src="/images/github.png" alt="Github" className="w-6 h-6" />
         </a>
       </div>
     </>

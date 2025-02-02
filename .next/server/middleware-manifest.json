@@ -1,47 +1,6 @@
 {
   "version": 3,
   "middleware": {},
-  "functions": {
-    "/api/ai/venice": {
-      "files": [
-        "server/edge-runtime-webpack.js",
-        "server/pages/api/ai/venice.js"
-      ],
-      "name": "pages/api/ai/venice",
-      "page": "/api/ai/venice",
-      "matchers": [
-        {
-          "regexp": "^/api/ai/venice$",
-          "originalSource": "/api/ai/venice"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "nQuDf7HW1U6CePmcNDz0Y9ZeWgrN1rYng59pB6M2o0Q="
-      }
-    },
-    "/api/ai/saigent": {
-      "files": [
-        "server/edge-runtime-webpack.js",
-        "server/pages/api/ai/saigent.js"
-      ],
-      "name": "pages/api/ai/saigent",
-      "page": "/api/ai/saigent",
-      "matchers": [
-        {
-          "regexp": "^/api/ai/saigent$",
-          "originalSource": "/api/ai/saigent"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "nQuDf7HW1U6CePmcNDz0Y9ZeWgrN1rYng59pB6M2o0Q="
-      }
-    }
-  },
+  "functions": {},
   "sortedMiddleware": []
 }
