@@ -79,6 +79,7 @@ const API_ROUTES: Record<number, string> = {
   3: "/api/ai/flaunch",
   4: "/api/ai/crypto",
   5: "/api/ai/social",
+  10: "/api/ai/saigent",
 };
 
 const LOCAL_STORAGE_KEYS = {
@@ -566,7 +567,7 @@ const LandingPage: React.FC = () => {
           showToast("You are already staked!", "success");
         } else {
           window.open(
-            `https://dashboard.mor.org/#/builders/${walletAddress}?network=base`,
+            `https://dashboard.mor.org/#/builders/0x3082ff65dbbc9af673b283c31d546436e07875a57eaffa505ce04de42b279306?network=mainnet`,
             "_blank"
           );
         }
@@ -597,14 +598,12 @@ const LandingPage: React.FC = () => {
   }, [walletAddress, showToast]);
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <header className="sticky top-0 z-50 p-4 bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-            <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
-              Agent Access
-            </h1>
             <div className="flex items-center gap-4">
               {sdk ? (
                 <Connect sdk={sdk} onConnect={handleWalletConnection} />
@@ -635,9 +634,6 @@ const LandingPage: React.FC = () => {
           >
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Chat with Agent
-                </h2>
                 <div className="flex items-center space-x-2">
                   <select
                     value={selectedAgentId}
@@ -655,7 +651,7 @@ const LandingPage: React.FC = () => {
                     onClick={clearConversation}
                     className="bg-gray-300 hover:bg-gray-400 text-gray-900 px-3 py-2 rounded"
                   >
-                    New Chat
+                    New
                   </button>
                 </div>
               </div>
@@ -775,52 +771,6 @@ const LandingPage: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="chainFilter"
-                        className="text-sm text-gray-600"
-                      >
-                        Chain
-                      </label>
-                      <select
-                        id="chainFilter"
-                        value={agentFilters.chain}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            chain: e.target.value,
-                          }))
-                        }
-                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Chains</option>
-                        {filterOptions.chains.map((chain) => (
-                          <option key={chain} value={chain}>
-                            {chain}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="imageFilter"
-                        checked={agentFilters.hasImage}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            hasImage: e.target.checked,
-                          }))
-                        }
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor="imageFilter"
-                        className="text-sm text-gray-600"
-                      >
-                        Has Image
-                      </label>
-                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
@@ -847,6 +797,14 @@ const LandingPage: React.FC = () => {
         </main>
       </div>
     </div>
+          <div className="mt-12 flex flex-col items-center justify-center"> 
+            <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
+              <a href="https://mor.org" target="_blank" rel="noopener noreferrer"> 
+                <img src="/images/mor.png" alt="Morpheus" className="w-18 h-10" />
+              </a>
+            </h1>
+        </div>
+        </>
   );
 };
 

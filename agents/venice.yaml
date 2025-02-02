@@ -10,7 +10,7 @@ type: "platform"
 chain: "Base"
 agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
 agentURL: "https://api.venice.ai/api/v1"
-stakeNeeded: true
+stakeNeeded: false
 actions:
   sendMessage:
     parameters:

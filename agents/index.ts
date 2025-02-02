@@ -21,4 +21,4 @@ export type Agent = {
   stakeNeeded?: boolean;
 };
 
-export const AGENTS: Agent[] = [morpheus, saigent, venice, flaunch, base, virtuals];
+export const AGENTS: Agent[] = [venice, morpheus, saigent, flaunch, base, virtuals];
