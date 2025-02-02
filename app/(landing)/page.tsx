@@ -808,13 +808,35 @@ const LandingPage: React.FC = () => {
           </main>
         </div>
       </div>
-      <div className="mt-12 flex flex-col items-center justify-center"> 
+      <div className="mt-12 space-x-8 flex items-center justify-center"> 
         <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
           <a href="https://mor.org" target="_blank" rel="noopener noreferrer"> 
-            <img src="/images/mor.png" alt="Morpheus" className="w-18 h-10" />
+            <img src="/images/mor.png" alt="Morpheus" className="w-12 h-6" />
           </a>
         </h1>
-      </div>
+          <a
+            href="https://discord.gg/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="/images/discord.svg"
+              alt="Discord"
+              className="w-8 h-8"
+            />
+          </a>
+          <a
+            href="https://x.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="/images/x.svg"
+              alt="X"
+              className="w-6 h-6"
+            />
+          </a>
+          </div>
     </>
   );
 };
