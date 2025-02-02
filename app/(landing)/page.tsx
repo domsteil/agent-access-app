@@ -1,6 +1,13 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo, useCallback, KeyboardEvent } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useMemo,
+  useCallback,
+  KeyboardEvent,
+} from "react";
 import Textarea from "react-textarea-autosize";
 import ReactMarkdown from "react-markdown";
 import { Connect } from "@/components/wallet/Connect";
@@ -8,13 +15,20 @@ import { isStaked } from "@/utils/check_stake";
 import { createCoinbaseWalletSDK } from "@coinbase/wallet-sdk";
 import { AGENTS } from "@/agents";
 import { CopyToClipboard } from "react-copy-to-clipboard";
-import { ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Send, Check } from "lucide-react";
+import {
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  Check,
+} from "lucide-react";
 import { useToast } from "@/hooks/useToast";
 import { debounce } from "lodash";
 
 // ---------- Types ----------
 type ActionParameter = {
-  type: 'number' | 'string';
+  type: "number" | "string";
   description: string;
   required: boolean;
 };
@@ -68,10 +82,10 @@ const API_ROUTES: Record<number, string> = {
 };
 
 const LOCAL_STORAGE_KEYS = {
-  WALLET_ADDRESS: 'walletAddress',
-  SELECTED_AGENT: 'selectedAgent',
-  CHAT_MESSAGES: 'chatMessages',
-  SIDEBAR_STATE: 'sidebarState'
+  WALLET_ADDRESS: "walletAddress",
+  SELECTED_AGENT: "selectedAgent",
+  CHAT_MESSAGES: "chatMessages",
+  SIDEBAR_STATE: "sidebarState",
 } as const;
 
 // ---------- Helper Functions ----------
@@ -89,7 +103,7 @@ const splitMessage = (body: string) => {
     "Finally,",
     "In conclusion,",
     "To summarize,",
-    "In summary,"
+    "In summary,",
   ];
 
   for (const phrase of transitionPhrases) {
@@ -133,12 +147,9 @@ const useWallet = () => {
           appName: "Agent Access",
           preference: { options: "all" },
         });
-
         setSDK(sdkInstance);
-
         if (sdkInstance) {
           const provider = sdkInstance.getProvider();
-
           provider.on("accountsChanged", (accounts: unknown) => {
             const accountArray = accounts as string[];
             if (accountArray?.[0]) {
@@ -149,7 +160,6 @@ const useWallet = () => {
               localStorage.removeItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
             }
           });
-
           const accounts = (await provider.request({ method: "eth_accounts" })) as string[];
           if (accounts?.[0]) {
             setWalletAddress(accounts[0]);
@@ -158,12 +168,11 @@ const useWallet = () => {
         }
       } catch (error) {
         console.error("Error initializing wallet SDK:", error);
-        // Removed showToast reference from here.
       }
     };
 
     initializeSDK();
-  }, []); // Removed showToast from dependency array
+  }, []);
 
   const handleWalletConnection = useCallback((address: string) => {
     setWalletAddress(address);
@@ -209,30 +218,50 @@ const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => 
   }, [message.timestamp]);
 
   return (
-    <div className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+    <div
+      className={`mb-3 flex ${
+        message.role === "user" ? "justify-end" : "justify-start"
+      }`}
+    >
       <CopyToClipboard text={message.content} onCopy={handleCopy}>
         <div className="relative w-full max-w-[80%] group">
-          <div className={`p-4 rounded-xl shadow-md transition-all duration-200 ${message.role === "user"
-              ? "bg-blue-600 text-white hover:shadow-lg"
-              : "bg-gray-100 text-gray-800 hover:shadow-lg"
-            }`}>
-            <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
-            <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
+          <div
+            className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
+              message.role === "user"
+                ? "bg-blue-600 text-white hover:shadow-lg"
+                : "bg-gray-100 text-gray-800 hover:shadow-lg"
+            }`}
+          >
+            <div className="text-xs text-gray-500 mb-2">
+              {formattedTimestamp}
+            </div>
+            <ReactMarkdown className="prose max-w-none">
+              {response}
+            </ReactMarkdown>
             {hasThinkBlock && reason && (
               <div className="mt-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowReason(prev => !prev);
+                    setShowReason((prev) => !prev);
                   }}
                   className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
                 >
-                  {showReason ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                  {showReason ? "Hide Reasoning" : "Show Reasoning"}
+                  {showReason ? (
+                    <>
+                      <ChevronUp size={16} /> Hide Reasoning
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={16} /> Show Reasoning
+                    </>
+                  )}
                 </button>
                 {showReason && (
                   <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                    <ReactMarkdown className="prose max-w-none">{reason}</ReactMarkdown>
+                    <ReactMarkdown className="prose max-w-none">
+                      {reason}
+                    </ReactMarkdown>
                   </div>
                 )}
               </div>
@@ -257,102 +286,115 @@ const AgentCard: React.FC<{
   isUserStaked: boolean;
   selected: boolean;
   onSelect: (id: number) => void;
-}> = React.memo(({ agent, onStake, isUserStaked, selected, onSelect }) => {
-  const handleClick = useCallback(() => {
-    if (agent.stakeNeeded && !isUserStaked) {
-      alert("Staking required to access this agent");
-      onStake(agent.id);
-    } else {
-      onSelect(agent.id);
-    }
-  }, [agent, isUserStaked, onStake, onSelect]);
+}> = React.memo(
+  ({ agent, onStake, isUserStaked, selected, onSelect }) => {
+    const handleClick = useCallback(() => {
+      if (agent.stakeNeeded && !isUserStaked) {
+        alert("Staking required to access this agent");
+        onStake(agent.id);
+      } else {
+        onSelect(agent.id);
+      }
+    }, [agent, isUserStaked, onStake, onSelect]);
 
-  const renderActions = () => {
-    if (!agent.actions?.length) return null;
+    const renderActions = () => {
+      if (!agent.actions?.length) return null;
+      return (
+        <div className="mt-4 space-y-2">
+          <h4 className="text-sm font-semibold text-gray-700">
+            Available Actions:
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {agent.actions.map((action, index) => (
+              <span
+                key={`${action.name}-${index}`}
+                className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
+              >
+                {action.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      );
+    };
 
     return (
-      <div className="mt-4 space-y-2">
-        <h4 className="text-sm font-semibold text-gray-700">Available Actions:</h4>
-        <div className="flex flex-wrap gap-2">
-          {agent.actions.map((action, index) => (
-            <span
-              key={`${action.name}-${index}`}
-              className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs"
-            >
-              {action.name}
-            </span>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className={`
-      bg-white border p-6 rounded-xl shadow-sm transition-all duration-200
-      ${selected ? 'border-blue-500 shadow-md' : 'border-gray-200 hover:shadow-xl'}
-    `}>
-      <div className="relative">
-        {agent.image && (
-          <img
-            src={agent.image}
-            alt={`${agent.name} image`}
-            className="w-full h-32 object-cover rounded-lg mb-4"
-            loading="lazy"
-          />
-        )}
-        <h3 className="text-gray-900 text-xl font-bold mb-1">{agent.name}</h3>
-        <p className="text-gray-700 text-sm mb-2">{agent.description}</p>
-        <div className="flex flex-wrap gap-2">
-          {agent.model && (
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-              {agent.model}
-            </span>
-          )}
-          {agent.type && (
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-              {agent.type}
-            </span>
-          )}
-          {agent.chain && (
-            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
-              {agent.chain}
-            </span>
-          )}
-          {agent.agentAddress && (
-            <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-              {`${agent.agentAddress.slice(0, 6)}...${agent.agentAddress.slice(-4)}`}
-            </span>
-          )}
-        </div>
-        {renderActions()}
-      </div>
-
-      <button
-        onClick={handleClick}
+      <div
         className={`
-          mt-4 w-full px-4 py-2 rounded transition-colors
-          ${agent.stakeNeeded && !isUserStaked
-            ? 'bg-green-500 hover:bg-green-600 text-white'
-            : 'bg-blue-500 hover:bg-blue-600 text-white'}
+          bg-white border p-6 rounded-xl shadow-sm transition-all duration-200
+          ${selected ? "border-blue-500 shadow-md" : "border-gray-200 hover:shadow-xl"}
         `}
       >
-        {agent.stakeNeeded
-          ? isUserStaked
-            ? 'Staked'
-            : 'Stake to Access'
-          : 'Access Agent'}
-      </button>
-    </div>
-  );
-});
+        <div className="relative">
+          {agent.image && (
+            <img
+              src={agent.image}
+              alt={`${agent.name} image`}
+              className="w-full h-32 object-cover rounded-lg mb-4"
+              loading="lazy"
+            />
+          )}
+          <h3 className="text-gray-900 text-xl font-bold mb-1">
+            {agent.name}
+          </h3>
+          <p className="text-gray-700 text-sm mb-2">{agent.description}</p>
+          <div className="flex flex-wrap gap-2">
+            {agent.model && (
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                {agent.model}
+              </span>
+            )}
+            {agent.type && (
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                {agent.type}
+              </span>
+            )}
+            {agent.chain && (
+              <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                {agent.chain}
+              </span>
+            )}
+            {agent.agentAddress && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                {`${agent.agentAddress.slice(0, 6)}...${agent.agentAddress.slice(
+                  -4
+                )}`}
+              </span>
+            )}
+          </div>
+          {renderActions()}
+        </div>
+        <button
+          onClick={handleClick}
+          className={`
+            mt-4 w-full px-4 py-2 rounded transition-colors
+            ${
+              agent.stakeNeeded && !isUserStaked
+                ? "bg-green-500 hover:bg-green-600 text-white"
+                : "bg-blue-500 hover:bg-blue-600 text-white"
+            }
+          `}
+        >
+          {agent.stakeNeeded
+            ? isUserStaked
+              ? "Staked"
+              : "Stake to Access"
+            : "Access Agent"}
+        </button>
+      </div>
+    );
+  }
+);
 
 AgentCard.displayName = "AgentCard";
 
 // ---------- Main Component ----------
 const LandingPage: React.FC = () => {
   const { walletAddress, sdk, handleWalletConnection } = useWallet();
-  const [messages, setMessages] = usePersistentState<Message[]>(LOCAL_STORAGE_KEYS.CHAT_MESSAGES, []);
+  const [messages, setMessages] = usePersistentState<Message[]>(
+    LOCAL_STORAGE_KEYS.CHAT_MESSAGES,
+    []
+  );
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = usePersistentState<number>(
@@ -366,160 +408,168 @@ const LandingPage: React.FC = () => {
     hasImage: false,
   });
   const [isUserStaked, setIsUserStaked] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = usePersistentState(LOCAL_STORAGE_KEYS.SIDEBAR_STATE, true);
+  const [isSidebarOpen, setIsSidebarOpen] = usePersistentState(
+    LOCAL_STORAGE_KEYS.SIDEBAR_STATE,
+    true
+  );
   const { showToast } = useToast();
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // NEW: Function to clear the conversation
+  const clearConversation = useCallback(() => {
+    setMessages([]);
+  }, [setMessages]);
+
   // Improved auto-scroll handling
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
 
   useEffect(() => {
     if (!chatContainerRef.current) return;
-
     const container = chatContainerRef.current;
     let lastScrollTop = container.scrollTop;
-
     const handleScroll = () => {
-      // If user scrolls up, disable auto-scroll
       if (container.scrollTop < lastScrollTop) {
         setShouldAutoScroll(false);
       }
-
-      // If user scrolls near bottom, enable auto-scroll
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       if (isNearBottom) {
         setShouldAutoScroll(true);
       }
-
       lastScrollTop = container.scrollTop;
     };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Handle auto-scrolling when new messages arrive
   useEffect(() => {
     if (shouldAutoScroll && messagesEndRef.current) {
-      const scrollOptions = { behavior: 'smooth' as const, block: 'end' as const };
+      const scrollOptions = {
+        behavior: "smooth" as const,
+        block: "end" as const,
+      };
       messagesEndRef.current.scrollIntoView(scrollOptions);
     }
   }, [messages, shouldAutoScroll]);
 
-  // Memoized filter options with type safety
-  const filterOptions = useMemo(() => ({
-    models: Array.from(new Set(AGENTS.map(a => a.model).filter(Boolean))),
-    types: Array.from(new Set(AGENTS.map(a => a.type).filter(Boolean))),
-    chains: Array.from(new Set(AGENTS.map(a => a.chain).filter(Boolean))),
-  }), []);
+  const filterOptions = useMemo(
+    () => ({
+      models: Array.from(new Set(AGENTS.map((a) => a.model).filter(Boolean))),
+      types: Array.from(new Set(AGENTS.map((a) => a.type).filter(Boolean))),
+      chains: Array.from(new Set(AGENTS.map((a) => a.chain).filter(Boolean))),
+    }),
+    []
+  );
 
-  // Filtered agents with performance optimization
   const filteredAgents = useMemo(() => {
-    return AGENTS.filter(agent => {
+    return AGENTS.filter((agent) => {
       const { model, type, chain, hasImage } = agentFilters;
-      return (!model || agent.model === model) &&
+      return (
+        (!model || agent.model === model) &&
         (!type || agent.type === type) &&
         (!chain || agent.chain === chain) &&
-        (!hasImage || agent.image);
+        (!hasImage || agent.image)
+      );
     });
   }, [agentFilters]);
 
-  // Debounced chat handler
   const debouncedHandleChat = useMemo(
-    () => debounce(async () => {
-      const trimmedInput = inputValue.trim();
-      if (!trimmedInput) return;
-
-      const newMessage: Message = {
-        id: generateMessageId(),
-        role: "user",
-        content: trimmedInput,
-        timestamp: Date.now(),
-      };
-
-      setMessages(prev => [...prev, newMessage]);
-      setInputValue("");
-      setLoading(true);
-
-      try {
-        const response = await fetch(API_ROUTES[selectedAgentId] ?? "/api/ai/venice", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ messages: [...messages, newMessage] }),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const assistantMessageContent = data?.choices?.[0]?.message?.content;
-
-        if (assistantMessageContent) {
-          const assistantMessage: Message = {
-            id: generateMessageId(),
-            role: "assistant",
-            content: assistantMessageContent,
-            timestamp: Date.now(),
-          };
-          setMessages(prev => [...prev, assistantMessage]);
-        } else {
-          throw new Error("No message content returned");
-        }
-      } catch (error) {
-        console.error("Error in chat:", error);
-        setMessages(prev => [...prev, {
+    () =>
+      debounce(async () => {
+        const trimmedInput = inputValue.trim();
+        if (!trimmedInput) return;
+        const newMessage: Message = {
           id: generateMessageId(),
-          role: "assistant",
-          content: "Sorry, there was an error processing your request. Please try again.",
+          role: "user",
+          content: trimmedInput,
           timestamp: Date.now(),
-        }]);
-      } finally {
-        setLoading(false);
-        inputRef.current?.focus();
-      }
-    }, 300),
+        };
+        setMessages((prev) => [...prev, newMessage]);
+        setInputValue("");
+        setLoading(true);
+        try {
+          const response = await fetch(
+            API_ROUTES[selectedAgentId] ?? "/api/ai/venice",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ messages: [...messages, newMessage] }),
+            }
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          const assistantMessageContent = data?.choices?.[0]?.message?.content;
+          if (assistantMessageContent) {
+            const assistantMessage: Message = {
+              id: generateMessageId(),
+              role: "assistant",
+              content: assistantMessageContent,
+              timestamp: Date.now(),
+            };
+            setMessages((prev) => [...prev, assistantMessage]);
+          } else {
+            throw new Error("No message content returned");
+          }
+        } catch (error) {
+          console.error("Error in chat:", error);
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: generateMessageId(),
+              role: "assistant",
+              content:
+                "Sorry, there was an error processing your request. Please try again.",
+              timestamp: Date.now(),
+            },
+          ]);
+        } finally {
+          setLoading(false);
+          inputRef.current?.focus();
+        }
+      }, 300),
     [messages, selectedAgentId, inputValue]
   );
 
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      if (!loading) debouncedHandleChat();
-    }
-  }, [loading, debouncedHandleChat]);
-
-  // Stake handling with error management
-  const handleStake = useCallback(async (agentId: number) => {
-    const currentWalletAddress = walletAddress || localStorage.getItem(LOCAL_STORAGE_KEYS.WALLET_ADDRESS);
-
-    if (!currentWalletAddress) {
-      showToast("Please connect your wallet first", "warning");
-      return;
-    }
-
-    try {
-      const staked = await isStaked(currentWalletAddress);
-      setIsUserStaked(staked);
-
-      if (staked) {
-        showToast("You are already staked!", "success");
-      } else {
-        window.open(
-          `https://dashboard.mor.org/#/builders/0x3082ff65dbbc9af673b283c31d546436e07875a57eaffa505ce04de42b279306?network=base`,
-          "_blank"
-        );
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        if (!loading) debouncedHandleChat();
       }
-    } catch (error) {
-      console.error("Error checking stake status:", error);
-      showToast("Error checking stake status", "error");
-    }
-  }, [walletAddress, showToast]);
+    },
+    [loading, debouncedHandleChat]
+  );
 
-  // Enhanced stake status check
+  const handleStake = useCallback(
+    async (agentId: number) => {
+      if (!walletAddress) {
+        showToast("Please connect your wallet first", "warning");
+        return;
+      }
+      try {
+        const staked = await isStaked(walletAddress);
+        setIsUserStaked(staked);
+        if (staked) {
+          showToast("You are already staked!", "success");
+        } else {
+          window.open(
+            `https://dashboard.mor.org/#/builders/${walletAddress}?network=base`,
+            "_blank"
+          );
+        }
+      } catch (error) {
+        console.error("Error checking stake status:", error);
+        showToast("Error checking stake status", "error");
+      }
+    },
+    [walletAddress, showToast]
+  );
+
   const checkStake = useCallback(async () => {
     if (!walletAddress) {
       showToast("Please connect your wallet first", "warning");
@@ -555,12 +605,14 @@ const LandingPage: React.FC = () => {
               )}
               <button
                 onClick={checkStake}
-                className={`px-4 py-2 rounded transition-colors ${isUserStaked ? "bg-green-500 hover:bg-green-600" : "bg-blue-500 hover:bg-blue-600"
-                  } text-white`}
+                className={`px-4 py-2 rounded transition-colors ${
+                  isUserStaked
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-blue-500 hover:bg-blue-600"
+                } text-white`}
               >
                 {isUserStaked ? "Staked" : "Check Stake"}
               </button>
-
             </div>
           </div>
         </header>
@@ -568,22 +620,38 @@ const LandingPage: React.FC = () => {
         {/* Main Content */}
         <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
           {/* Chat Section */}
-          <section className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? 'w-full md:w-1/2' : 'w-full'
-            }`}>
+          <section
+            className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+              isSidebarOpen ? "w-full md:w-1/2" : "w-full"
+            }`}
+          >
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">Chat with Agent</h2>
-                <select
-                  value={selectedAgentId}
-                  onChange={(e) => setSelectedAgentId(Number(e.target.value))}
-                  className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
-                >
-                  {AGENTS.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  Chat with Agent
+                </h2>
+                <div className="flex items-center space-x-2">
+                  <select
+                    value={selectedAgentId}
+                    onChange={(e) =>
+                      setSelectedAgentId(Number(e.target.value))
+                    }
+                    className="bg-gray-100 text-gray-900 p-2 rounded border border-gray-300"
+                  >
+                    {AGENTS.map((agent) => (
+                      <option key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </option>
+                    ))}
+                  </select>
+                  {/* New Chat / Clear Conversation Button */}
+                  <button
+                    onClick={clearConversation}
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-900 px-3 py-2 rounded"
+                  >
+                    New Chat
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -624,8 +692,9 @@ const LandingPage: React.FC = () => {
 
           {/* AI Agents Sidebar */}
           <aside
-            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${isSidebarOpen ? "w-full md:w-1/2" : "w-12"
-              } ${isSidebarOpen ? 'opacity-100' : 'opacity-80 hover:opacity-100'}`}
+            className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
+              isSidebarOpen ? "w-full md:w-1/2" : "w-12"
+            } ${isSidebarOpen ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
           >
             <button
               onClick={() => setIsSidebarOpen((prev) => !prev)}
@@ -641,11 +710,14 @@ const LandingPage: React.FC = () => {
 
             {isSidebarOpen && (
               <div className="h-full overflow-y-auto p-4">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Available Agents</h2>
-
+                <h2 className="text-xl font-bold text-gray-900 mb-4">
+                  Available Agents
+                </h2>
                 {/* Filters */}
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Filters</h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    Filters
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label htmlFor="modelFilter" className="text-sm text-gray-600">
@@ -654,16 +726,22 @@ const LandingPage: React.FC = () => {
                       <select
                         id="modelFilter"
                         value={agentFilters.model}
-                        onChange={(e) => setAgentFilters(prev => ({ ...prev, model: e.target.value }))}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({
+                            ...prev,
+                            model: e.target.value,
+                          }))
+                        }
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Models</option>
                         {filterOptions.models.map((model) => (
-                          <option key={model} value={model}>{model}</option>
+                          <option key={model} value={model}>
+                            {model}
+                          </option>
                         ))}
                       </select>
                     </div>
-
                     <div className="space-y-2">
                       <label htmlFor="typeFilter" className="text-sm text-gray-600">
                         Type
@@ -671,16 +749,22 @@ const LandingPage: React.FC = () => {
                       <select
                         id="typeFilter"
                         value={agentFilters.type}
-                        onChange={(e) => setAgentFilters(prev => ({ ...prev, type: e.target.value }))}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({
+                            ...prev,
+                            type: e.target.value,
+                          }))
+                        }
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Types</option>
                         {filterOptions.types.map((type) => (
-                          <option key={type} value={type}>{type}</option>
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
                         ))}
                       </select>
                     </div>
-
                     <div className="space-y-2">
                       <label htmlFor="chainFilter" className="text-sm text-gray-600">
                         Chain
@@ -688,22 +772,33 @@ const LandingPage: React.FC = () => {
                       <select
                         id="chainFilter"
                         value={agentFilters.chain}
-                        onChange={(e) => setAgentFilters(prev => ({ ...prev, chain: e.target.value }))}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({
+                            ...prev,
+                            chain: e.target.value,
+                          }))
+                        }
                         className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="">All Chains</option>
                         {filterOptions.chains.map((chain) => (
-                          <option key={chain} value={chain}>{chain}</option>
+                          <option key={chain} value={chain}>
+                            {chain}
+                          </option>
                         ))}
                       </select>
                     </div>
-
                     <div className="flex items-center space-x-2">
                       <input
                         type="checkbox"
                         id="imageFilter"
                         checked={agentFilters.hasImage}
-                        onChange={(e) => setAgentFilters(prev => ({ ...prev, hasImage: e.target.checked }))}
+                        onChange={(e) =>
+                          setAgentFilters((prev) => ({
+                            ...prev,
+                            hasImage: e.target.checked,
+                          }))
+                        }
                         className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <label htmlFor="imageFilter" className="text-sm text-gray-600">
@@ -712,7 +807,6 @@ const LandingPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
                 {/* Agent Grid */}
                 <div className="grid grid-cols-1 gap-4">
                   {filteredAgents.length === 0 ? (
