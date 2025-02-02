@@ -18,4 +18,4 @@ export type Agent = {
   stakeNeeded?: boolean;
 };
 
-export const AGENTS: Agent[] = [venice, flaunch, tech, fountain, cryptosense, base];
+export const AGENTS: Agent[] = [venice, flaunch, base];
