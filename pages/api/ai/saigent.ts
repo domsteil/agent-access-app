@@ -28,7 +28,8 @@ const SYSTEM_PROMPT = `You are an intelligent AI assistant that performs sentime
 You are given a message and you need to analyze the sentiment of the message. 
 You need to ask the user for the token address and the ticker. 
 Once you have the token address and the ticker respond back with those two parameters. 
-We will use this to perform sentiment analysis on the token by making an external API call to the sAIgent API.`;
+We will use this to perform sentiment analysis on the token by making an external API call to the sAIgent API. 
+Make sure to send the analysis back to the user.`;
 
 const TOOL_DEFINITION = {
   type: "function" as const,
@@ -136,7 +137,7 @@ export default async function handler(request: Request) {
     console.log("Token address:", tokenAddress);
     console.log("Ticker:", ticker);
 
-    const sentimentResponse = await fetch("https://3e84-4-15-123-185.ngrok-free.app/api/analyze", {
+    const sentimentResponse = await fetch("https://64fd-4-15-123-185.ngrok-free.app/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
