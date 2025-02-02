@@ -765,46 +765,6 @@ const LandingPage: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                    <div className="space-y-2">
-                      <label htmlFor="chainFilter" className="text-sm text-gray-600">
-                        Chain
-                      </label>
-                      <select
-                        id="chainFilter"
-                        value={agentFilters.chain}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            chain: e.target.value,
-                          }))
-                        }
-                        className="w-full bg-white text-gray-900 p-2 rounded border border-gray-300 focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">All Chains</option>
-                        {filterOptions.chains.map((chain) => (
-                          <option key={chain} value={chain}>
-                            {chain}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="imageFilter"
-                        checked={agentFilters.hasImage}
-                        onChange={(e) =>
-                          setAgentFilters((prev) => ({
-                            ...prev,
-                            hasImage: e.target.checked,
-                          }))
-                        }
-                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                      />
-                      <label htmlFor="imageFilter" className="text-sm text-gray-600">
-                        Has Image
-                      </label>
-                    </div>
                   </div>
                 </div>
                 {/* Agent Grid */}
