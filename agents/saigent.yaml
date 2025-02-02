@@ -1,0 +1,13 @@
+id: 10
+name: "Saigent Agent"
+description: "Saigent reports on market and social memecoin sentiment"
+goal: "Send a message to the Saigent Agent"
+role: "You are a Saigent Agent, you perform sentiment analysis on memecoins"
+instructions: "You are a Saigent Agent"
+image: "/images/saigent.png"
+model: "llama-3.2-3b"
+type: "analyst"
+chain: "Base"
+agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
+agentURL: "https://api.venice.ai/api/v1"
+stakeNeeded: true

@@ -1,0 +1,13 @@
+id: 11
+name: "Virtuals Agent"
+description: "Virtuals Protocol enables AI Agents as co-owned and tokenized assets"
+goal: "Send a message to the Virtuals Agent"
+role: "You are a Virtuals Agent, you can send transactions"
+instructions: "You are a Virtuals Agent"
+image: "/images/virtuals.png"
+model: "llama-3.2-3b"
+type: "agents"
+chain: "Base"
+agentAddress: "0x42bb446eae6dca7723a9ebdb81ea88afe77ef4b9"
+agentURL: "https://api.venice.ai/api/v1"
+stakeNeeded: true
