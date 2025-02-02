@@ -101,6 +101,7 @@ const splitMessage = (body: string) => {
   }
 
   const transitionPhrases = [
+    "Okay,",
     "Putting it all together,",
     "Finally,",
     "In conclusion,",
@@ -204,7 +205,7 @@ const usePersistentState = <T,>(key: string, initialValue: T) => {
 
 const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => {
   const isAssistant = message.role === "assistant";
-  const hasThinkBlock = isAssistant && message.content.includes("<think>");
+  const hasThinkBlock = isAssistant && message.content.includes("</think>");
   const { reason, response } = hasThinkBlock
     ? splitMessage(message.content)
     : { reason: "", response: message.content };
@@ -221,49 +222,47 @@ const ChatMessage: React.FC<{ message: Message }> = React.memo(({ message }) => 
   }, [message.timestamp]);
 
   return (
-    <div
-      className={`mb-3 flex ${
-        message.role === "user" ? "justify-end" : "justify-start"
-      }`}
-    >
+    <div className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
       <CopyToClipboard text={message.content} onCopy={handleCopy}>
         <div className="relative w-full max-w-[80%] group">
-          <div
-            className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
-              message.role === "user"
-                ? "bg-blue-600 text-white hover:shadow-lg"
-                : "bg-gray-100 text-gray-800 hover:shadow-lg"
-            }`}
-          >
-            <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
-            <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
-            {hasThinkBlock && reason && (
-              <div className="mt-3">
+          {/* Reasoning Block - Displayed First if Present */}
+          {hasThinkBlock && reason && (
+            <div className="mb-3 p-4 rounded-xl bg-green-50 border border-green-200 text-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-green-800">AI's Reasoning Process</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowReason((prev) => !prev);
                   }}
-                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  className="flex items-center gap-1 text-sm text-green-700 hover:text-green-800 transition-colors"
                 >
                   {showReason ? (
-                    <>
-                      <ChevronUp size={16} /> Hide Reasoning
-                    </>
+                    <><ChevronUp size={16} /> Hide</>
                   ) : (
-                    <>
-                      <ChevronDown size={16} /> Show Reasoning
-                    </>
+                    <><ChevronDown size={16} /> Show</>
                   )}
                 </button>
-                {showReason && (
-                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                    <ReactMarkdown className="prose max-w-none">{reason}</ReactMarkdown>
-                  </div>
-                )}
               </div>
-            )}
+              {showReason && (
+                <div className="mt-2 text-sm">
+                  <ReactMarkdown className="prose max-w-none">{reason}</ReactMarkdown>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {/* Main Response */}
+          <div className={`p-4 rounded-xl shadow-md transition-all duration-200 ${
+            message.role === "user"
+              ? "bg-blue-600 text-white hover:shadow-lg"
+              : "bg-gray-100 text-gray-800 hover:shadow-lg"
+          }`}>
+            <div className="text-xs text-gray-500 mb-2">{formattedTimestamp}</div>
+            <ReactMarkdown className="prose max-w-none">{response}</ReactMarkdown>
           </div>
+
+          {/* Copy Indicator */}
           {copied && (
             <div className="absolute top-2 right-2 text-xs text-green-500 flex items-center gap-1">
               <Check size={12} /> Copied
@@ -361,10 +360,9 @@ const AgentCard: React.FC<{
         onClick={handleClick}
         className={`
           mt-4 w-full px-4 py-2 rounded transition-colors
-          ${
-            agent.stakeNeeded && !isUserStaked
-              ? "bg-green-500 hover:bg-green-600 text-white"
-              : "bg-blue-500 hover:bg-blue-600 text-white"
+          ${agent.stakeNeeded && !isUserStaked
+            ? "bg-green-500 hover:bg-green-600 text-white"
+            : "bg-blue-500 hover:bg-blue-600 text-white"
           }
         `}
       >
@@ -621,11 +619,10 @@ const LandingPage: React.FC = () => {
                 )}
                 <button
                   onClick={checkStake}
-                  className={`px-4 py-2 rounded transition-colors ${
-                    isUserStaked
-                      ? "bg-green-500 hover:bg-green-600"
-                      : "bg-blue-500 hover:bg-blue-600"
-                  } text-white`}
+                  className={`px-4 py-2 rounded transition-colors ${isUserStaked
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-blue-500 hover:bg-blue-600"
+                    } text-white`}
                 >
                   {isUserStaked ? "Staked" : "Check Stake"}
                 </button>
@@ -637,9 +634,8 @@ const LandingPage: React.FC = () => {
           <main className="flex flex-col md:flex-row h-[calc(100vh-4rem)]">
             {/* Chat Section */}
             <section
-              className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
-                isSidebarOpen ? "w-full md:w-1/2" : "w-full"
-              }`}
+              className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${isSidebarOpen ? "w-full md:w-1/2" : "w-full"
+                }`}
             >
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
@@ -705,9 +701,8 @@ const LandingPage: React.FC = () => {
 
             {/* AI Agents Sidebar */}
             <aside
-              className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${
-                isSidebarOpen ? "w-full md:w-1/2" : "w-12"
-              } ${isSidebarOpen ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
+              className={`relative transition-all duration-300 overflow-hidden border-l border-gray-200 bg-white ${isSidebarOpen ? "w-full md:w-1/2" : "w-12"
+                } ${isSidebarOpen ? "opacity-100" : "opacity-80 hover:opacity-100"}`}
             >
               <button
                 onClick={() => setIsSidebarOpen((prev) => !prev)}
@@ -808,35 +803,35 @@ const LandingPage: React.FC = () => {
           </main>
         </div>
       </div>
-      <div className="mt-12 space-x-8 flex items-center justify-center"> 
+      <div className="mt-12 space-x-8 flex items-center justify-center">
         <h1 className="text-gray-900 font-montserrat text-2xl font-bold mb-2 md:mb-0">
-          <a href="https://mor.org" target="_blank" rel="noopener noreferrer"> 
+          <a href="https://mor.org" target="_blank" rel="noopener noreferrer">
             <img src="/images/mor.png" alt="Morpheus" className="w-12 h-6" />
           </a>
         </h1>
-          <a
-            href="https://discord.gg/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="/images/discord.svg"
-              alt="Discord"
-              className="w-8 h-8"
-            />
-          </a>
-          <a
-            href="https://x.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <img
-              src="/images/x.svg"
-              alt="X"
-              className="w-6 h-6"
-            />
-          </a>
-          </div>
+        <a
+          href="https://discord.gg/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="/images/discord.svg"
+            alt="Discord"
+            className="w-8 h-8"
+          />
+        </a>
+        <a
+          href="https://x.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <img
+            src="/images/x.svg"
+            alt="X"
+            className="w-6 h-6"
+          />
+        </a>
+      </div>
     </>
   );
 };
